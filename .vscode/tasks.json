@@ -8,7 +8,7 @@
 			],
 			"args": [
 				"-w", "./src/",
-				"-x", "llvm-cov -q --lcov --output-path=lcov.info"
+				"-x", "llvm-cov -q --lcov --output-path target/llvm-cov-target/lcov.info"
 			],
 			"group": "test",
 			"label": "rust: cargo watch",
