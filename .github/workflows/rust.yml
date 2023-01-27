@@ -21,14 +21,14 @@ jobs:
       with:
         filename: coverage.xml
         output: file
-    - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v2
-      if: always()
-      with:
-        junit_files: "junit.xml"
     - name: Add Coverage PR Comment
       uses: marocchino/sticky-pull-request-comment@v2
       if: github.event_name == 'pull_request'
       with:
         recreate: true
         path: code-coverage-results.md
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        junit_files: "junit.xml"
