@@ -35,15 +35,4 @@ jobs:
         name: coverage-results
         path: 'coverage.xml'
         retention-days: 1
-    - name: Publish Test Report
-      uses: mikepenz/action-junit-report@v3
-      if: always() 
-      with:
-        report_paths: 'target/nextest/ci/junit.xml'
-    - name: Add Coverage PR Comment
-      uses: marocchino/sticky-pull-request-comment@v2
-      if: github.event_name == 'pull_request'
-      with:
-        recreate: true
-        path: code-coverage-results.md
-        
+    
