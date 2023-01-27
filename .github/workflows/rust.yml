@@ -15,7 +15,7 @@ jobs:
     - uses: taiki-e/install-action@cargo-llvm-cov
     - uses: taiki-e/install-action@nextest
     - name: Run coverage
-      run: cargo llvm-cov nextest --cobertura --output-path coverage.xml
+      run: cargo llvm-cov nextest --cobertura --output-path coverage.xml --profile ci
     - name: Code Coverage Summary Report
       uses: irongut/CodeCoverageSummary@v1.3.0
       with:
@@ -26,13 +26,13 @@ jobs:
       if: always() # always run even if the previous step fails
       with:
         name: junit-test-results
-        path: 'junit.xml'
+        path: 'target/nextest/ci/junit.xml'
         retention-days: 1
     - name: Upload Coverage Report
       uses: actions/upload-artifact@v3
       if: always() # always run even if the previous step fails
       with:
-        name: junit-test-results
+        name: coverage-results
         path: 'coverage.xml'
         retention-days: 1
         
