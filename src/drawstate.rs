@@ -9,7 +9,7 @@ Down Centres: BR    BL    BD    RL    RB    RD    LB    LR    LD    DL    DR    
 use std::fs;
 use crate::state::{RawState, apply_raw_permutation, flip_num_to_bool_array};
 
-const SVG_TEMPLATE_FILE: &str = "./fto.svg";
+const SVG_TEMPLATE_FILE: &str = "./assets/fto.svg";
 
 const COLOURS: &[&str] = &[
     "#fff",
