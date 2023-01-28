@@ -44,8 +44,8 @@ jobs:
         retention-days: 1
     - name: Add reports to job summary
       run: |
-        echo -e "###Test Results\n\n" >> $GITHUB_STEP_SUMMARY
+        echo -e "### Test Results\n\n" >> $GITHUB_STEP_SUMMARY
         cat test-summary.md >> $GITHUB_STEP_SUMMARY
-        echo -e "\n\n###Coverage Results\n\n" >> $GITHUB_STEP_SUMMARY
+        echo -e "\n\n### Coverage Results\n\n" >> $GITHUB_STEP_SUMMARY
         cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
     
