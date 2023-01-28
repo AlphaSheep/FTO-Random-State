@@ -15,7 +15,7 @@ jobs:
     - uses: taiki-e/install-action@cargo-llvm-cov
     - uses: taiki-e/install-action@nextest
     - name: Run tests
-      run: cargo llvm-cov nextest --cobertura --output-path coverage.xml --profile ci
+      run: cargo llvm-cov nextest --lcov --output-path lcov.info --profile ci
     - name: Create test report
       uses: test-summary/action@v2
       if: always()
@@ -44,6 +44,8 @@ jobs:
         retention-days: 1
     - name: Add reports to job summary
       run: |
+        echo -e "###Test Results\n\n" >> $GITHUB_STEP_SUMMARY
         cat test-summary.md >> $GITHUB_STEP_SUMMARY
+        echo -e "\n\n###Coverage Results\n\n" >> $GITHUB_STEP_SUMMARY
         cat code-coverage-results.md >> $GITHUB_STEP_SUMMARY
     
