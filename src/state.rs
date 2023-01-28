@@ -91,25 +91,26 @@
 
 use crate::movedefs::Turn;
 
-// pub const NUM_CORNERS: usize = 6;
-// pub const NUM_EDGES: usize = 12;
-// pub const NUM_CENTRES: usize = 12;
-
-
 #[derive(Clone, Copy)]
 pub struct RawState {
-  pub corners: [u8; 6],
-  pub corner_orientation: u8,
-  pub edges: [u8; 12],
-  pub up_centres: [u8; 12],
-  pub down_centres: [u8; 12],
+    pub corners: [u8; 6],
+    pub corner_orientation: u8,
+    pub edges: [u8; 12],
+    pub up_centres: [u8; 12],
+    pub down_centres: [u8; 12],
 }
+
+#[derive(Clone, Copy)]
+pub struct State {
+
+}
+
 
 impl RawState {
     pub fn new(corners: &[u8], corner_orientation: u8, edges: &[u8], up_centres: &[u8], down_centres: &[u8]) -> Self {
         Self {
             corners: corners.try_into().unwrap(), 
-            corner_orientation: corner_orientation, 
+            corner_orientation, 
             edges: edges.try_into().unwrap(), 
             up_centres: up_centres.try_into().unwrap(), 
             down_centres: down_centres.try_into().unwrap(),
@@ -127,16 +128,16 @@ impl RawState {
     }
 
     pub fn apply(&mut self, m: &Turn) {
-        apply_permutation(&mut self.corners, &m.corners);
-        apply_orientation(&mut self.corner_orientation, &m.corners, &m.corner_orientation);
-        apply_permutation(&mut self.edges, &m.edges);
-        apply_permutation(&mut self.up_centres, &m.up_centres);
-        apply_permutation(&mut self.down_centres, &m.down_centres);
+        apply_raw_permutation(&mut self.corners, &m.corners);
+        apply_orientation(&mut self.corner_orientation, &m.corners, &m.corner_orientation[0]);
+        apply_raw_permutation(&mut self.edges, &m.edges);
+        apply_raw_permutation(&mut self.up_centres, &m.up_centres);
+        apply_raw_permutation(&mut self.down_centres, &m.down_centres);
     }
 }
 
 
-pub fn apply_permutation<T>(state: &mut [T], effect: &[u8]) 
+pub fn apply_raw_permutation<T>(state: &mut [T], effect: &[u8]) 
 where T: Copy + Clone
 {
     let orig_state: Vec<T> = state.to_vec();
@@ -147,8 +148,8 @@ where T: Copy + Clone
 }
 
 pub fn apply_orientation(state: &mut u8, perm_effect: &[u8], orient_effect: &u8) {
-    let mut flip_state = flip_num_to_bool_array(&state);
-    apply_permutation::<bool>(&mut flip_state, &perm_effect);
+    let mut flip_state = flip_num_to_bool_array(state);
+    apply_raw_permutation::<bool>(&mut flip_state, perm_effect);
     *state = flip_bool_array_to_num(&flip_state) ^ orient_effect;
 }
 
@@ -164,15 +165,14 @@ pub fn flip_num_to_bool_array(state: &u8) -> [bool; 6] {
 
 fn flip_bool_array_to_num(state: &[bool]) -> u8 {
     let mut num: u8 = 0;
-    for i in 0..6 {
+    for flipped in state {
         num *= 2;
-        if state[i] {
+        if *flipped {
             num += 1;
         }
     }
     num
 }
-
 
 
 #[cfg(test)]
@@ -202,7 +202,7 @@ mod tests {
     #[test_case([3,2,1,4,5,0], &[5,3,4,2,0,1], &[0,4,5,1,3,2])]
     fn test_apply_permutation(start_state: [u8; 6], permutation: &[u8], expected: &[u8]) {
         let mut state : [u8;6] = start_state;
-        apply_permutation::<u8>(&mut state, permutation);
+        apply_raw_permutation::<u8>(&mut state, permutation);
         assert_eq!(state, expected);
     }
 
