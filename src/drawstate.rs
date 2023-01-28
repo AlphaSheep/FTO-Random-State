@@ -7,11 +7,11 @@ Down Centres: BR    BL    BD    RL    RB    RD    LB    LR    LD    DL    DR    
 */
 
 use std::fs;
-use crate::state::{RawState, apply_permutation, flip_num_to_bool_array};
+use crate::state::{RawState, apply_raw_permutation, flip_num_to_bool_array};
 
-const SVG_TEMPLATE_FILE: &'static str = "./assets/fto.svg";
+const SVG_TEMPLATE_FILE: &str = "./fto.svg";
 
-const COLOURS: &'static [&'static str] = &[
+const COLOURS: &[&str] = &[
     "#fff",
     "#f00",
     "#f80",
@@ -31,7 +31,7 @@ const B: u8 = 5;
 const L: u8 = 6;
 const R: u8 = 7;
 
-const CORNER_NAMES_UP_GOOD: &'static [&'static str] = &[
+const CORNER_NAMES_UP_GOOD: &[&str] = &[
     "corn-UBL-U",
     "corn-UBR-U",
     "corn-UF-U",
@@ -39,7 +39,7 @@ const CORNER_NAMES_UP_GOOD: &'static [&'static str] = &[
     "corn-DR-BR",
     "corn-DL-F",
 ];
-const CORNER_NAMES_UP_FLIPPED: &'static [&'static str] = &[    
+const CORNER_NAMES_UP_FLIPPED: &[&str] = &[    
     "corn-UBL-BL",
     "corn-UBR-BR",
     "corn-UF-F",
@@ -47,7 +47,7 @@ const CORNER_NAMES_UP_FLIPPED: &'static [&'static str] = &[
     "corn-DR-F",
     "corn-DL-BL",
 ];
-const CORNER_NAMES_DOWN_GOOD: &'static [&'static str] = &[    
+const CORNER_NAMES_DOWN_GOOD: &[&str] = &[    
     "corn-UBL-L",
     "corn-UBR-B",
     "corn-UF-R",
@@ -55,7 +55,7 @@ const CORNER_NAMES_DOWN_GOOD: &'static [&'static str] = &[
     "corn-DR-D",
     "corn-DL-D",
 ];
-const CORNER_NAMES_DOWN_FLIPPED: &'static [&'static str] = &[    
+const CORNER_NAMES_DOWN_FLIPPED: &[&str] = &[    
     "corn-UBL-B",
     "corn-UBR-R",
     "corn-UF-L",
@@ -63,7 +63,7 @@ const CORNER_NAMES_DOWN_FLIPPED: &'static [&'static str] = &[
     "corn-DR-R",
     "corn-DL-L",
 ];
-const EDGE_UP_NAMES: &'static [&'static str] = &[
+const EDGE_UP_NAMES: &[&str] = &[
     "edge-UB-U",
     "edge-UR-U",
     "edge-UL-U",
@@ -77,7 +77,7 @@ const EDGE_UP_NAMES: &'static [&'static str] = &[
     "edge-FR-F",
     "edge-FD-F",
 ];
-const EDGE_DOWN_NAMES: &'static [&'static str] = &[    
+const EDGE_DOWN_NAMES: &[&str] = &[    
     "edge-UB-B",
     "edge-UR-R",
     "edge-UL-L",
@@ -91,7 +91,7 @@ const EDGE_DOWN_NAMES: &'static [&'static str] = &[
     "edge-FR-R",
     "edge-FD-D",
 ];
-const UP_CENTRE_NAMES: &'static [&'static str] = &[    
+const UP_CENTRE_NAMES: &[&str] = &[    
     "cent-UBL",
     "cent-UBR",
     "cent-UF",
@@ -105,7 +105,7 @@ const UP_CENTRE_NAMES: &'static [&'static str] = &[
     "cent-FBR",
     "cent-FBL",
 ];
-const DOWN_CENTRE_NAMES: &'static [&'static str] = &[    
+const DOWN_CENTRE_NAMES: &[&str] = &[    
     "cent-BR",
     "cent-BL",
     "cent-BD",
@@ -120,7 +120,7 @@ const DOWN_CENTRE_NAMES: &'static [&'static str] = &[
     "cent-DB",
 ];
 
-const STYLE_PLACEHOLDER: &'static str = &"<!--*style placeholder-->";
+const STYLE_PLACEHOLDER: &str = "<!--*style placeholder-->";
 
 
 struct StickerState {
@@ -151,18 +151,18 @@ impl StickerState {
     pub fn create_from_raw_state(state: &RawState) -> Self {
         let mut stickers = StickerState::get_initial();
         
-        apply_permutation(&mut stickers.corner_up_good, &state.corners);
-        apply_permutation(&mut stickers.corner_up_flipped, &state.corners);
-        apply_permutation(&mut stickers.corner_down_good, &state.corners);
-        apply_permutation(&mut stickers.corner_down_flipped, &state.corners);
+        apply_raw_permutation(&mut stickers.corner_up_good, &state.corners);
+        apply_raw_permutation(&mut stickers.corner_up_flipped, &state.corners);
+        apply_raw_permutation(&mut stickers.corner_down_good, &state.corners);
+        apply_raw_permutation(&mut stickers.corner_down_flipped, &state.corners);
         apply_sticker_orientation(&mut stickers.corner_up_good, &mut stickers.corner_up_flipped, &state.corner_orientation);
         apply_sticker_orientation(&mut stickers.corner_down_good, &mut stickers.corner_down_flipped, &state.corner_orientation);
 
-        apply_permutation(&mut stickers.edge_up, &state.edges);
-        apply_permutation(&mut stickers.edge_down, &state.edges);
+        apply_raw_permutation(&mut stickers.edge_up, &state.edges);
+        apply_raw_permutation(&mut stickers.edge_down, &state.edges);
         
-        apply_permutation(&mut stickers.up_centres, &state.up_centres);
-        apply_permutation(&mut stickers.down_centres, &state.down_centres);
+        apply_raw_permutation(&mut stickers.up_centres, &state.up_centres);
+        apply_raw_permutation(&mut stickers.down_centres, &state.down_centres);
 
         stickers
     }

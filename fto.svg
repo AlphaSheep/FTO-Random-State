@@ -1,0 +1,88 @@
+<svg version="1.1" viewBox="0 0 120 60" xmlns="http://www.w3.org/2000/svg">
+
+  <!--*style placeholder-->
+
+  <g stroke="#000" stroke-linejoin="bevel">
+
+    <path class="corn-UBL-U" d="m0 0 10 10 10-10z"/>
+    <path class="corn-UBR-U" d="m40 0h20l-10 10z"/>
+    <path class="corn-UF-U" d="m30 30-10-10h20z"/>
+    <path class="edge-UB-U" d="m20 0h20l-10 10z"/>
+    <path class="edge-UR-U" d="m50 10-10 10-10-10z"/>
+    <path class="edge-UL-U" d="m10 10h20l-10 10z"/>
+    <path class="cent-UBR" d="m50 10h-20l10-10z"/>
+    <path class="cent-UBL" d="m20 0-10 10h20z"/>
+    <path class="cent-UF" d="m40 20-10-10-10 10z"/>
+
+    <path class="corn-DL-L" d="m0 60 10-10-10-10z"/>
+    <path class="corn-UF-L" d="m30 30-10 10v-20z"/>
+    <path class="corn-UBL-L" d="m0 20v-20l10 10z"/>
+    <path class="edge-BLL-L" d="m0 40v-20l10 10z"/>
+    <path class="edge-UL-L" d="m10 10 10 10-10 10z"/>
+    <path class="edge-FL-L" d="m10 50v-20l10 10z"/>
+    <path class="cent-LB" d="m10 10v20l-10-10z"/>
+    <path class="cent-LR" d="m20 20-10 10 10 10z"/>
+    <path class="cent-LD" d="m0 40 10 10v-20z"/>
+
+    <path class="corn-DR-F" d="m60 60-10-10-10 10z"/>
+    <path class="corn-DL-F" d="m20 60h-20l10-10z"/>
+    <path class="corn-UF-F" d="m30 30 10 10h-20z"/>
+    <path class="edge-FD-F" d="m40 60h-20l10-10z"/>
+    <path class="edge-FL-F" d="m10 50 10-10 10 10z"/>
+    <path class="edge-FR-F" d="m50 50h-20l10-10z"/>
+    <path class="cent-FBL" d="m10 50h20l-10 10z"/>
+    <path class="cent-FU" d="m20 40 10 10 10-10z"/>
+    <path class="cent-FBR" d="m40 60 10-10h-20z"/>
+
+    <path class="corn-UBR-R" d="m60 0 -10 10 10 10z"/>
+    <path class="corn-DR-R" d="m60 40v20l-10-10z"/>
+    <path class="corn-UF-R" d="m30 30 10-10v20z"/>
+    <path class="edge-BRR-R" d="m60 20v20l-10-10z"/>
+    <path class="edge-FR-R" d="m50 50-10-10 10-10z"/>
+    <path class="edge-UR-R" d="m50 10v20l-10-10z"/>
+    <path class="cent-RD" d="m50 50v-20l10 10z"/>
+    <path class="cent-RB" d="m60 20-10-10v20z"/>
+    <path class="cent-RL" d="m40 40 10-10-10-10z"/>
+
+    <path class="corn-UBR-B" d="m60-0 10 10 10-10z"/>
+    <path class="corn-UBL-B" d="m100-0h20l-10 10z"/>
+    <path class="corn-DB-B" d="m90 30-10-10h20z"/>
+    <path class="edge-UB-B" d="m80-0h20l-10 10z"/>
+    <path class="edge-BLB-B" d="m110 10-10 10-10-10z"/>
+    <path class="edge-BRB-B" d="m70 10h20l-10 10z"/>
+    <path class="cent-BL" d="m110 10h-20l10-10z"/>
+    <path class="cent-BR" d="m80-0-10 10h20z"/>
+    <path class="cent-BD" d="m100 20-10-10-10 10z"/>
+                    
+    <path class="corn-DR-BR" d="m60 60 10-10-10-10z"/>
+    <path class="corn-UBR-BR" d="m60 20v-20l10 10z"/>
+    <path class="corn-DB-BR" d="m90 30-10 10v-20z"/>
+    <path class="edge-BRR-BR" d="m60 40v-20l10 10z"/>
+    <path class="edge-BRB-BR" d="m70 10 10 10-10 10z"/>
+    <path class="edge-BRD-BR" d="m70 50v-20l10 10z"/>
+    <path class="cent-BRU" d="m70 10v20l-10-10z"/>
+    <path class="cent-BRF" d="m60 40 10 10v-20z"/>
+    <path class="cent-BRBL" d="m80 20-10 10 10 10z"/>
+                    
+    <path class="corn-DL-D" d="m120 60-10-10-10 10z"/>
+    <path class="corn-DR-D" d="m80 60h-20l10-10z"/>
+    <path class="corn-DB-D" d="m90 30 10 10h-20z"/>
+    <path class="edge-FD-D" d="m100 60h-20l10-10z"/>
+    <path class="edge-BRD-D" d="m70 50 10-10 10 10z"/>
+    <path class="edge-BLD-D" d="m110 50h-20l10-10z"/>
+    <path class="cent-DR" d="m70 50h20l-10 10z"/>
+    <path class="cent-DL" d="m100 60 10-10h-20z"/>
+    <path class="cent-DB" d="m80 40 10 10 10-10z"/>
+
+    <path class="corn-UBL-BL" d="m120-0-10 10 10 10z"/>
+    <path class="corn-DL-BL" d="m120 40v20l-10-10z"/>
+    <path class="corn-DB-BL" d="m90 30 10-10v20z"/>
+    <path class="edge-BLL-BL" d="m120 20v20l-10-10z"/>
+    <path class="edge-BLD-BL" d="m110 50-10-10 10-10z"/>
+    <path class="edge-BLB-BL" d="m110 10v20l-10-10z"/>
+    <path class="cent-BLF" d="m110 50v-20l10 10z"/>
+    <path class="cent-BLU" d="m120 20-10-10v20z"/>
+    <path class="cent-BLBR" d="m100 40 10-10-10-10z"/>
+
+  </g>
+</svg>
