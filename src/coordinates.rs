@@ -2,21 +2,14 @@ use core::panic;
 use lazy_static::lazy_static;
 
 use crate::state::apply_raw_permutation;
-use crate::movedefs::TurnEffectType;
-
+use crate::movedefs::{TurnEffectType, NUM_CORNERS, NUM_EDGES, NUM_CENTRES};
 
 pub const NUM_CORNER_PERMS: usize = 360;
 pub const NUM_CORNER_ORIENTATIONS: usize = 32;
+pub const NUM_CORNER_STATES: usize = 11_520;
 pub const NUM_EDGE_PERMS: usize = 239_500_800;
 pub const NUM_FACE_PIECE_PERMS: usize = 369_600;
 pub const NUM_ACROSS_FACE_PERMS: usize = 34_650;
-
-const NUM_CORNERS: usize = 6;
-const NUM_EDGES: usize = 12;
-const NUM_CENTRES: usize = 12;
-
-
-
 
 lazy_static! {
     static ref BINOMIAL_TABLE: [[u64; 13]; 13] = precompute_binomial_table();
@@ -37,6 +30,7 @@ fn precompute_binomial_table() -> [[u64; 13]; 13] {
 pub enum Coordinate {
     CornerPermutation,
     CornerOrientation,
+    CornerState,
     EdgeInFace,
     EdgeAcrossFaces,
     UpCentre,
@@ -46,8 +40,7 @@ pub enum Coordinate {
 impl Coordinate {
     pub fn iter() -> impl Iterator<Item = Self> {
         [
-            Self::CornerPermutation,
-            // Self::CornerOrientation,
+            Self::CornerState,
             Self::EdgeInFace,
             Self::EdgeAcrossFaces,
             Self::UpCentre,
@@ -59,6 +52,7 @@ impl Coordinate {
         match self {
             Self::CornerPermutation => permutation_to_coord(state),
             Self::CornerOrientation => state[0] as u32,
+            Self::CornerState => corner_state_to_coord(state),
             Self::EdgeInFace => face_position_to_coord(state),
             Self::EdgeAcrossFaces => perm_across_face_coord(state),
             Self::UpCentre => face_position_to_coord(state),
@@ -70,6 +64,7 @@ impl Coordinate {
         match self {
             Self::CornerPermutation => invert_coord_to_permutation::<6>(coord).to_vec(),
             Self::CornerOrientation => vec![coord as u8],
+            Self::CornerState => invert_coord_to_corner_state(coord).to_vec(),
             Self::EdgeInFace => invert_coord_to_face_positions(coord).to_vec(),
             Self::EdgeAcrossFaces => invert_coord_to_perm_across_face(coord).to_vec(),
             Self::UpCentre => invert_coord_to_face_positions(coord).to_vec(),
@@ -81,6 +76,7 @@ impl Coordinate {
         match self {
             Self::CornerPermutation => NUM_CORNER_PERMS,
             Self::CornerOrientation => NUM_CORNER_ORIENTATIONS,
+            Self::CornerState => NUM_CORNER_STATES,
             Self::EdgeInFace => NUM_FACE_PIECE_PERMS,
             Self::EdgeAcrossFaces => NUM_ACROSS_FACE_PERMS,
             Self::UpCentre => NUM_FACE_PIECE_PERMS,
@@ -92,6 +88,7 @@ impl Coordinate {
         match self {
             Self::CornerPermutation => TurnEffectType::CornerPermutation,
             Self::CornerOrientation => TurnEffectType::CornerOrientation,
+            Self::CornerState => TurnEffectType::Corner,
             Self::EdgeInFace => TurnEffectType::EdgeInFace,
             Self::EdgeAcrossFaces => TurnEffectType::EdgeAcrossFaces,
             Self::UpCentre => TurnEffectType::UpCentre,
@@ -148,6 +145,33 @@ fn invert_coord_to_permutation_ignore_parity<const N: usize>(mut coord: u32) -> 
         coord %= factors[i] as u32;
     }
     perm
+}
+
+fn corner_state_to_coord(state: &[u8]) -> u32 {
+    let mut orientation: u32 = 0;
+    for s in &state[1..] {
+        orientation *= 2;
+        orientation += (s % 2) as u32;
+    }
+    let perm_coord = permutation_to_coord(state);
+    perm_coord + (orientation * NUM_CORNER_PERMS as u32)
+}
+
+fn invert_coord_to_corner_state(coord: u32) -> [u8; NUM_CORNERS] {
+    let perm_coord = coord % NUM_CORNER_PERMS as u32;
+    let mut state = invert_coord_to_permutation::<NUM_CORNERS>(perm_coord);
+    let mut orientation_coord = coord / NUM_CORNER_PERMS as u32;
+    let mut first_flip: u8 = 0;
+    for i in (1..NUM_CORNERS).rev() {
+        let flip = (orientation_coord % 2) as u8;
+        orientation_coord /= 2;
+        first_flip ^= flip;
+        state[i] *= 2;
+        state[i] += flip;
+    }
+    state[0] *= 2;
+    state[0] += first_flip;
+    state
 }
 
 /// Converts a permutation 4 sets of 3 centre pieces into a single 32-bit coordinate.
@@ -250,7 +274,7 @@ fn sub_permutation_coord(positions: &[u8], num_groups: u32, num_per_group: u32) 
         let mut divider: u32 = 1;
         for j in 1..num_per_group {
             multiplier *= face - j;
-            divider *= (j+1);
+            divider *= j+1;
         }        
         coord *= multiplier / divider;
     }
@@ -339,6 +363,17 @@ mod tests {
         assert_eq!(coord.state_to_coord(state), value);
     }
 
+    #[test_case(&[0,2,4,6,8,10], 0)]
+    #[test_case(&[1,2,4,6,8,11], 360)]
+    #[test_case(&[4,0,2,6,8,10], 1)]
+    #[test_case(&[5,0,2,6,8,11], 361)]
+    #[test_case(&[8,10,6,4,2,0], 359)]
+    #[test_case(&[9,11,7,5,3,1], 11_519)]
+    fn test_full_corner_state_to_coord(state: &[u8], value: u32) {
+        let coord = Coordinate::CornerState;
+        assert_eq!(coord.state_to_coord(state), value);
+    }
+
     #[test_case(&[0,1,2,3,4,5,6,7,8,9,10,11], 0)]
     #[test_case(&[1,0,3,2,4,5,6,7,8,9,10,11], 1)]
     #[test_case(&[11,10,9,8,7,6,5,4,3,2,1,0], 369_599)]
@@ -384,6 +419,17 @@ mod tests {
     #[test_case(&[0b00011111], 31)]
     fn test_invert_corner_orientation_coord(state: &[u8], value: u32) {
         let coord = Coordinate::CornerOrientation;
+        assert_eq!(coord.coord_to_state(value), state);
+    }
+
+    #[test_case(&[0,2,4,6,8,10], 0)]
+    #[test_case(&[1,2,4,6,8,11], 360)]
+    #[test_case(&[4,0,2,6,8,10], 1)]
+    #[test_case(&[5,0,2,6,8,11], 361)]
+    #[test_case(&[8,10,6,4,2,0], 359)]
+    #[test_case(&[9,11,7,5,3,1], 11_519)]
+    fn test_invert_full_corner_coord(state: &[u8], value: u32) {
+        let coord = Coordinate::CornerState;
         assert_eq!(coord.coord_to_state(value), state);
     }
 
@@ -504,6 +550,8 @@ mod tests {
     fn test_invert_single_face_centre_coord(coord: u32, num: u8, size: u8, fill: u8, expected: &[u8]) {
         assert_eq!(invert_single_face_centre_coord(coord, num, size, fill), expected);
     }
+
+
 
     #[test]
     fn test_precompute_binomial_table() {

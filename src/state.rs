@@ -128,14 +128,13 @@ impl RawState {
     }
 
     pub fn apply(&mut self, m: &Turn) {
-        apply_raw_permutation(&mut self.corners, &m.corners);
-        apply_orientation(&mut self.corner_orientation, &m.corners, &m.corner_orientation[0]);
+        apply_raw_permutation(&mut self.corners, &m.corner_permutation);
+        apply_orientation(&mut self.corner_orientation, &m.corner_permutation, &m.corner_orientation[0]);
         apply_raw_permutation(&mut self.edges, &m.edges);
         apply_raw_permutation(&mut self.up_centres, &m.up_centres);
         apply_raw_permutation(&mut self.down_centres, &m.down_centres);
     }
 }
-
 
 pub fn apply_raw_permutation<T>(state: &mut [T], effect: &[u8]) 
 where T: Copy + Clone
@@ -151,6 +150,19 @@ pub fn apply_orientation(state: &mut u8, perm_effect: &[u8], orient_effect: &u8)
     let mut flip_state = flip_num_to_bool_array(state);
     apply_raw_permutation::<bool>(&mut flip_state, perm_effect);
     *state = flip_bool_array_to_num(&flip_state) ^ orient_effect;
+}
+
+pub fn apply_full_corner(state: &mut [u8], perm_effect: &[u8], orient_effect: &u8) {
+    apply_raw_permutation(state, perm_effect);
+    let mut orientation = *orient_effect;
+    let mut first_flip: u8 = 0;
+    for i in (1..state.len()).rev() {
+        let flip = orientation % 2;
+        orientation /= 2;
+        first_flip ^= flip;
+        state[i] ^= flip;
+    }
+    state[0] ^= first_flip;
 }
 
 pub fn flip_num_to_bool_array(state: &u8) -> [bool; 6] {
@@ -215,6 +227,17 @@ mod tests {
     fn test_apply_orientation(start_state: u8, permutation_effect: &[u8], orientation_effect: &u8, expected: u8) {
         let mut state : u8 = start_state;
         apply_orientation(&mut state, permutation_effect, orientation_effect);
+        assert_eq!(state, expected);
+    }
+
+    #[test_case([0,2,4,6,8,10], &[0,1,2,3,4,5], &0, &[0,2,4,6,8,10])]
+    #[test_case([2,4,6,8,10,0], &[0,1,2,3,4,5], &0b000101, &[2,4,6,9,10,1])]
+    #[test_case([6,4,2,8,10,0], &[5,3,4,2,0,1], &0b000000, &[0,8,10,2,6,4])]
+    #[test_case([6,4,2,8,10,0], &[5,3,4,2,0,1], &0b010001, &[0,9,10,2,6,5])]
+    #[test_case([6,4,2,9,10,1], &[5,3,4,2,0,1], &0b010001, &[1,8,10,2,6,5])]
+    fn test_apply_full_corner(start_state: [u8; 6], permutation_effect: &[u8], orientation_effect: &u8, expected: &[u8]) {
+        let mut state : [u8;6] = start_state;
+        apply_full_corner(&mut state, permutation_effect, orientation_effect);
         assert_eq!(state, expected);
     }
 }

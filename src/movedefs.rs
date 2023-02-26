@@ -21,8 +21,15 @@
 //      0   1   2   3   4   5   6   7   8   9   10  11
 //      BR  BL  BD  RL  RB  RD  LB  LR  LD  DL  DR  DB   
 
+use std::borrow::Cow;
+
+pub const NUM_CORNERS: usize = 6;
+pub const NUM_EDGES: usize = 12;
+pub const NUM_CENTRES: usize = 12;
+
 const TURN_U: Turn = Turn { 
-    corners: [2,0,1,3,4,5],
+    corner_full_state: [0; 7],
+    corner_permutation: [2,0,1,3,4,5],
     corner_orientation: [0b000000],
     edges: [2,0,1,3,4,5,6,7,8,9,10,11],
     up_centres: [2,0,1,3,4,5,6,7,8,9,10,11],
@@ -30,7 +37,8 @@ const TURN_U: Turn = Turn {
     triple_centres: [0,1,2,3,4,5,6,7,8,9,10,11],
 };   
 const TURN_F: Turn = Turn { 
-    corners: [0,1,5,3,2,4],
+    corner_full_state: [0; 7],
+    corner_permutation: [0,1,5,3,2,4],
     corner_orientation: [0b001001],
     edges: [0,1,2,3,4,5,6,7,8,11,9,10],
     up_centres: [0,1,2,3,4,5,6,7,8,11,9,10],
@@ -38,7 +46,8 @@ const TURN_F: Turn = Turn {
     triple_centres: [0,1,2,3,4,5,6,7,8,9,10,11],
 };
 const TURN_BL: Turn = Turn { 
-    corners: [3,1,2,5,4,0],
+    corner_full_state: [0; 7],
+    corner_permutation: [3,1,2,5,4,0],
     corner_orientation: [0b100100],
     edges: [0,1,2,5,3,4,6,7,8,9,10,11],
     up_centres: [0,1,2,5,3,4,6,7,8,9,10,11],
@@ -46,7 +55,8 @@ const TURN_BL: Turn = Turn {
     triple_centres: [0,1,2,3,4,5,6,7,8,9,10,11],
 };
 const TURN_BR: Turn = Turn {
-    corners: [0,4,2,1,3,5],
+    corner_full_state: [0; 7],
+    corner_permutation: [0,4,2,1,3,5],
     corner_orientation: [0b010010],
     edges: [0,1,2,3,4,5,8,6,7,9,10,11],
     up_centres: [0,1,2,3,4,5,8,6,7,9,10,11],
@@ -58,7 +68,8 @@ const TURN_BR: Turn = Turn {
 //      0   1   2   3   4   5   6   7   8   9   10  11
 //      BR  BL  BD  RL  RB  RD  LB  LR  LD  DL  DR  DB   
 const TURN_L: Turn = Turn {
-    corners: [5,1,0,3,4,2],
+    corner_full_state: [0; 7],
+    corner_permutation: [5,1,0,3,4,2],
     corner_orientation: [0b101000],
     edges: [0,1,4,3,9,5,6,7,8,2,10,11],
     up_centres: [4,1,3,11,9,5,6,7,8,0,10,2],
@@ -66,7 +77,8 @@ const TURN_L: Turn = Turn {
     triple_centres: [0,9,2,1,4,5,6,7,8,3,10,11],
 };
 const TURN_R: Turn = Turn {
-    corners: [0,2,4,3,1,5],
+    corner_full_state: [0; 7],
+    corner_permutation: [0,2,4,3,1,5],
     corner_orientation: [0b011000],
     edges: [0,10,2,3,4,5,1,7,8,9,6,11],
     up_centres: [0,9,10,3,4,5,2,7,1,8,6,11],
@@ -74,7 +86,8 @@ const TURN_R: Turn = Turn {
     triple_centres: [7,1,2,3,4,5,6,10,8,9,0,11],
 };
 const TURN_B: Turn = Turn {
-    corners: [1,3,2,0,4,5],
+    corner_full_state: [0; 7],
+    corner_permutation: [1,3,2,0,4,5],
     corner_orientation: [0b110000],
     edges: [7,1,2,0,4,5,6,3,8,9,10,11],
     up_centres: [6,7,2,1,4,0,5,3,8,9,10,11],
@@ -82,7 +95,8 @@ const TURN_B: Turn = Turn {
     triple_centres: [0,1,2,3,11,5,4,7,8,9,10,6],
 };
 const TURN_D: Turn = Turn {
-    corners: [0,1,2,4,5,3],
+    corner_full_state: [0; 7],
+    corner_permutation: [0,1,2,4,5,3],
     corner_orientation: [0b000000],
     edges: [0,1,2,3,4,8,6,7,11,9,10,5],
     up_centres: [0,1,2,3,7,8,6,10,11,9,4,5],
@@ -104,6 +118,7 @@ pub enum Face {
 }
 
 pub enum TurnEffectType {
+    Corner,
     CornerPermutation,
     CornerOrientation,
     EdgeInFace,
@@ -114,7 +129,8 @@ pub enum TurnEffectType {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Turn {
-    pub corners: [u8; 6],
+    corner_full_state: [u8; 7],
+    pub corner_permutation: [u8; 6],
     pub corner_orientation: [u8; 1],
     pub edges: [u8; 12],
     pub up_centres: [u8; 12],
@@ -139,8 +155,6 @@ impl Face {
         Turn::get(self)
     }
 }
-
-
 
 impl Turn {
     pub fn get(face: Face) -> &'static Self {
@@ -176,14 +190,22 @@ impl Turn {
         Self::get_for_faces(&Face::get_down_faces())
     }
 
-    pub fn get_effect<'a>(&'a self, effect_type: TurnEffectType) -> &'a [u8] {
+    fn get_corner_full_state(&self) -> Cow<[u8]> {
+        let mut state = Vec::with_capacity(NUM_CORNERS + 1);
+        state.extend_from_slice(&self.corner_permutation);
+        state.extend_from_slice(&self.corner_permutation);
+        Cow::Owned(state)
+    }
+
+    pub fn get_effect(&self, effect_type: TurnEffectType) -> Cow<[u8]> {
         match effect_type {
-            TurnEffectType::CornerPermutation => &self.corners, 
-            TurnEffectType::CornerOrientation => &self.corner_orientation, 
-            TurnEffectType::EdgeInFace => &self.edges, 
-            TurnEffectType::EdgeAcrossFaces => &self.edges, 
-            TurnEffectType::UpCentre => &self.up_centres, 
-            TurnEffectType::TripleCentre => &self.triple_centres,
+            TurnEffectType::Corner => self.get_corner_full_state(),
+            TurnEffectType::CornerPermutation => Cow::Borrowed(&self.corner_permutation),
+            TurnEffectType::CornerOrientation => Cow::Borrowed(&self.corner_orientation),
+            TurnEffectType::EdgeInFace => Cow::Borrowed(&self.edges),
+            TurnEffectType::EdgeAcrossFaces => Cow::Borrowed(&self.edges),
+            TurnEffectType::UpCentre => Cow::Borrowed(&self.up_centres),
+            TurnEffectType::TripleCentre => Cow::Borrowed(&self.triple_centres),
         }
     }
 }
@@ -240,18 +262,18 @@ mod tests {
 
     #[test]
     fn test_get_turn_effect_type() {
-        assert_eq!(TURN_U.get_effect(TurnEffectType::CornerPermutation), &TURN_U.corners);
-        assert_eq!(TURN_U.get_effect(TurnEffectType::CornerOrientation), &TURN_U.corner_orientation);
-        assert_eq!(TURN_U.get_effect(TurnEffectType::EdgeInFace), &TURN_U.edges);
-        assert_eq!(TURN_U.get_effect(TurnEffectType::EdgeAcrossFaces), &TURN_U.edges);
-        assert_eq!(TURN_U.get_effect(TurnEffectType::UpCentre), &TURN_U.up_centres);
-        assert_eq!(TURN_U.get_effect(TurnEffectType::TripleCentre), &TURN_U.triple_centres);
+        assert_eq!(TURN_U.get_effect(TurnEffectType::CornerPermutation).as_ref(), &TURN_U.corner_permutation);
+        assert_eq!(TURN_U.get_effect(TurnEffectType::CornerOrientation).as_ref(), &TURN_U.corner_orientation);
+        assert_eq!(TURN_U.get_effect(TurnEffectType::EdgeInFace).as_ref(), &TURN_U.edges);
+        assert_eq!(TURN_U.get_effect(TurnEffectType::EdgeAcrossFaces).as_ref(), &TURN_U.edges);
+        assert_eq!(TURN_U.get_effect(TurnEffectType::UpCentre).as_ref(), &TURN_U.up_centres);
+        assert_eq!(TURN_U.get_effect(TurnEffectType::TripleCentre).as_ref(), &TURN_U.triple_centres);
 
-        assert_eq!(TURN_D.get_effect(TurnEffectType::CornerPermutation), &TURN_D.corners);
-        assert_eq!(TURN_D.get_effect(TurnEffectType::CornerOrientation), &TURN_D.corner_orientation);
-        assert_eq!(TURN_D.get_effect(TurnEffectType::EdgeInFace), &TURN_D.edges);
-        assert_eq!(TURN_D.get_effect(TurnEffectType::EdgeAcrossFaces), &TURN_D.edges);
-        assert_eq!(TURN_D.get_effect(TurnEffectType::UpCentre), &TURN_D.up_centres);
-        assert_eq!(TURN_D.get_effect(TurnEffectType::TripleCentre), &TURN_D.triple_centres);
+        assert_eq!(TURN_D.get_effect(TurnEffectType::CornerPermutation).as_ref(), &TURN_D.corner_permutation);
+        assert_eq!(TURN_D.get_effect(TurnEffectType::CornerOrientation).as_ref(), &TURN_D.corner_orientation);
+        assert_eq!(TURN_D.get_effect(TurnEffectType::EdgeInFace).as_ref(), &TURN_D.edges);
+        assert_eq!(TURN_D.get_effect(TurnEffectType::EdgeAcrossFaces).as_ref(), &TURN_D.edges);
+        assert_eq!(TURN_D.get_effect(TurnEffectType::UpCentre).as_ref(), &TURN_D.up_centres);
+        assert_eq!(TURN_D.get_effect(TurnEffectType::TripleCentre).as_ref(), &TURN_D.triple_centres);
     }
 }
