@@ -89,7 +89,7 @@
     physically moved by the turn, as the corner that those centres were attached to moves.
 */
 
-use crate::movedefs::Turn;
+use crate::movedefs::{Face, RawTurn};
 
 #[derive(Clone, Copy)]
 pub struct RawState {
@@ -127,7 +127,7 @@ impl RawState {
         Self::new(&corners, corner_orientation, &edges, &up_centres, &down_centres)
     }
 
-    pub fn apply(&mut self, m: &Turn) {
+    pub fn apply(&mut self, m: &RawTurn) {
         apply_raw_permutation(&mut self.corners, &m.corner_permutation);
         apply_orientation(&mut self.corner_orientation, &m.corner_permutation, &m.corner_orientation[0]);
         apply_raw_permutation(&mut self.edges, &m.edges);

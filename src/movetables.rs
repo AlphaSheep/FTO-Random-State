@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use crate::coordinates::{self, Coordinate};
-use crate::movedefs::{Turn, Face, TurnEffectType};
-use crate::state::{self, apply_raw_permutation, apply_orientation};
+use crate::coordinates::Coordinate;
+use crate::movedefs::{RawTurn, Face, TurnEffectType};
+use crate::state::{apply_raw_permutation, apply_full_corner};
 
 pub struct MoveTable {
     initialised: bool,
@@ -47,7 +47,7 @@ impl MoveTable {
                     continue;
                 }
 
-                let turn = Turn::get(face);
+                let turn = RawTurn::get(face);
 
                 let mut cycle = [start_coord, 0, 0];
 

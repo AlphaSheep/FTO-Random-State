@@ -27,7 +27,8 @@ pub const NUM_CORNERS: usize = 6;
 pub const NUM_EDGES: usize = 12;
 pub const NUM_CENTRES: usize = 12;
 
-const TURN_U: Turn = Turn { 
+
+const TURN_U: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [2,0,1,3,4,5],
     corner_orientation: [0b000000],
@@ -36,7 +37,7 @@ const TURN_U: Turn = Turn {
     down_centres: [6,7,2,0,1,5,3,4,8,9,10,11],
     triple_centres: [0,1,2,3,4,5,6,7,8,9,10,11],
 };   
-const TURN_F: Turn = Turn { 
+const TURN_F: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [0,1,5,3,2,4],
     corner_orientation: [0b001001],
@@ -45,7 +46,7 @@ const TURN_F: Turn = Turn {
     down_centres: [0,1,2,8,4,7,6,9,10,5,3,11],
     triple_centres: [0,1,2,3,4,5,6,7,8,9,10,11],
 };
-const TURN_BL: Turn = Turn { 
+const TURN_BL: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [3,1,2,5,4,0],
     corner_orientation: [0b100100],
@@ -54,7 +55,7 @@ const TURN_BL: Turn = Turn {
     down_centres: [0,11,9,3,4,5,2,7,1,6,10,8],
     triple_centres: [0,1,2,3,4,5,6,7,8,9,10,11],
 };
-const TURN_BR: Turn = Turn {
+const TURN_BR: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [0,4,2,1,3,5],
     corner_orientation: [0b010010],
@@ -67,7 +68,7 @@ const TURN_BR: Turn = Turn {
 // Down Centres:
 //      0   1   2   3   4   5   6   7   8   9   10  11
 //      BR  BL  BD  RL  RB  RD  LB  LR  LD  DL  DR  DB   
-const TURN_L: Turn = Turn {
+const TURN_L: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [5,1,0,3,4,2],
     corner_orientation: [0b101000],
@@ -76,7 +77,7 @@ const TURN_L: Turn = Turn {
     down_centres: [0,1,2,3,4,5,8,6,7,9,10,11],
     triple_centres: [0,9,2,1,4,5,6,7,8,3,10,11],
 };
-const TURN_R: Turn = Turn {
+const TURN_R: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [0,2,4,3,1,5],
     corner_orientation: [0b011000],
@@ -85,7 +86,7 @@ const TURN_R: Turn = Turn {
     down_centres: [0,1,2,5,3,4,6,7,8,9,10,11],
     triple_centres: [7,1,2,3,4,5,6,10,8,9,0,11],
 };
-const TURN_B: Turn = Turn {
+const TURN_B: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [1,3,2,0,4,5],
     corner_orientation: [0b110000],
@@ -94,7 +95,7 @@ const TURN_B: Turn = Turn {
     down_centres: [2,0,1,3,4,5,6,7,8,9,10,11],
     triple_centres: [0,1,2,3,11,5,4,7,8,9,10,6],
 };
-const TURN_D: Turn = Turn {
+const TURN_D: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [0,1,2,4,5,3],
     corner_orientation: [0b000000],
@@ -128,7 +129,7 @@ pub enum TurnEffectType {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Turn {
+pub struct RawTurn {
     corner_full_state: [u8; 7],
     pub corner_permutation: [u8; 6],
     pub corner_orientation: [u8; 1],
@@ -151,12 +152,12 @@ impl Face {
         [Self::U, Self::F, Self::BL, Self::BR, Self::L, Self::R, Self::B, Self::D]       
     }
 
-    pub fn turn(self) -> &'static Turn {
-        Turn::get(self)
+    pub fn turn(self) -> &'static RawTurn {
+        RawTurn::get(self)
     }
 }
 
-impl Turn {
+impl RawTurn {
     pub fn get(face: Face) -> &'static Self {
         match face {
             Face::U => &TURN_U,
@@ -217,14 +218,14 @@ mod tests {
 
     #[test]
     fn test_get_single_turn() {
-        assert_eq!(Turn::get(Face::U), &TURN_U);
-        assert_eq!(Turn::get(Face::F), &TURN_F);
-        assert_eq!(Turn::get(Face::R), &TURN_R);
-        assert_eq!(Turn::get(Face::L), &TURN_L);
-        assert_eq!(Turn::get(Face::B), &TURN_B);
-        assert_eq!(Turn::get(Face::D), &TURN_D);
-        assert_eq!(Turn::get(Face::BR), &TURN_BR);
-        assert_eq!(Turn::get(Face::BL), &TURN_BL);
+        assert_eq!(RawTurn::get(Face::U), &TURN_U);
+        assert_eq!(RawTurn::get(Face::F), &TURN_F);
+        assert_eq!(RawTurn::get(Face::R), &TURN_R);
+        assert_eq!(RawTurn::get(Face::L), &TURN_L);
+        assert_eq!(RawTurn::get(Face::B), &TURN_B);
+        assert_eq!(RawTurn::get(Face::D), &TURN_D);
+        assert_eq!(RawTurn::get(Face::BR), &TURN_BR);
+        assert_eq!(RawTurn::get(Face::BL), &TURN_BL);
     }
 
     #[test]
@@ -241,21 +242,21 @@ mod tests {
 
     #[test]
     fn test_get_all_turns() {
-        let turns = Turn::get_all();
+        let turns = RawTurn::get_all();
         let expected = vec![&TURN_U, &TURN_F, &TURN_BL, &TURN_BR, &TURN_L, &TURN_R, &TURN_B, &TURN_D];
         assert_eq!(turns, expected);
     }
 
     #[test]
     fn test_get_up_turns() {
-        let turns = Turn::get_for_up_faces();
+        let turns = RawTurn::get_for_up_faces();
         let expected = vec![&TURN_U, &TURN_F, &TURN_BL, &TURN_BR];
         assert_eq!(turns, expected);
     }
 
     #[test]
     fn test_get_down_turns() {
-        let turns = Turn::get_for_down_faces();
+        let turns = RawTurn::get_for_down_faces();
         let expected = vec![&TURN_L, &TURN_R, &TURN_B, &TURN_D];
         assert_eq!(turns, expected);
     }
