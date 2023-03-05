@@ -6,26 +6,16 @@ mod coordinates;
 mod state;
 mod movetables;
 
-use crate::coordinates::Coordinate;
 use crate::movedefs::Face;
 use crate::state::RawState;
-use crate::movetables::MoveTable;
+use crate::movetables::MoveTables;
 
 
 fn main() {
 
     let now = Instant::now();
-    for coord in Coordinate::iter() {
-        let now = Instant::now();
-
-        println!("Generating move tables for {:?}...", coord);
-
-        let mut move_table = MoveTable::new(coord);
-        move_table.init();
-        move_table.populate();
-
-        println!("Done. Time taken: {} seconds", (now.elapsed().as_micros() as f64 / 1_000_000.0));
-    }
+    println!("Generating move tables");
+    let move_tables = MoveTables::generate();
     println!("Total time taken: {} seconds", (now.elapsed().as_micros() as f64 / 1_000_000.0));
 
     let mut state = RawState::solved();
