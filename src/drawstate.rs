@@ -9,6 +9,7 @@ Down Centres: BR    BL    BD    RL    RB    RD    LB    LR    LD    DL    DR    
 use std::fs;
 use crate::state::{RawState, apply_raw_permutation, flip_num_to_bool_array};
 
+
 const SVG_TEMPLATE_FILE: &str = "./assets/fto.svg";
 
 const COLOURS: &[&str] = &[
@@ -180,9 +181,7 @@ fn apply_sticker_orientation(good_stickers: &mut [u8], flipped_stickers: &mut [u
 
     for i in 0..flip.len() {
         if flip[i] {
-            let temp = good_stickers[i];
-            good_stickers[i] = flipped_stickers[i];
-            flipped_stickers[i] = temp;
+            std::mem::swap(&mut good_stickers[i], &mut flipped_stickers[i]);
         }
     }
 }
