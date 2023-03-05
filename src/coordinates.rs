@@ -4,6 +4,7 @@ use lazy_static::lazy_static;
 use crate::state::apply_raw_permutation;
 use crate::movedefs::{TurnEffectType, NUM_CORNERS, NUM_EDGES, NUM_CENTRES};
 
+
 pub const NUM_CORNER_PERMS: usize = 360;
 pub const NUM_CORNER_ORIENTATIONS: usize = 32;
 pub const NUM_CORNER_STATES: usize = 11_520;
@@ -14,6 +15,7 @@ pub const NUM_ACROSS_FACE_PERMS: usize = 34_650;
 lazy_static! {
     static ref BINOMIAL_TABLE: [[u64; 13]; 13] = precompute_binomial_table();
 }
+
 
 fn precompute_binomial_table() -> [[u64; 13]; 13] {
     let mut binomial_table = [[0; 13]; 13];
@@ -28,8 +30,6 @@ fn precompute_binomial_table() -> [[u64; 13]; 13] {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Coordinate {
-    CornerPermutation,
-    CornerOrientation,
     CornerState,
     EdgeInFace,
     EdgeAcrossFaces,
@@ -50,8 +50,6 @@ impl Coordinate {
 
     pub fn state_to_coord(&self, state: &[u8]) -> u32 {
         match self {
-            Self::CornerPermutation => permutation_to_coord(state),
-            Self::CornerOrientation => state[0] as u32,
             Self::CornerState => corner_state_to_coord(state),
             Self::EdgeInFace => face_position_to_coord(state),
             Self::EdgeAcrossFaces => perm_across_face_coord(state),
@@ -62,8 +60,6 @@ impl Coordinate {
 
     pub fn coord_to_state(&self, coord: u32) -> Vec<u8> {
         match self {
-            Self::CornerPermutation => invert_coord_to_permutation::<6>(coord).to_vec(),
-            Self::CornerOrientation => vec![coord as u8],
             Self::CornerState => invert_coord_to_corner_state(coord).to_vec(),
             Self::EdgeInFace => invert_coord_to_face_positions(coord).to_vec(),
             Self::EdgeAcrossFaces => invert_coord_to_perm_across_face(coord).to_vec(),
@@ -74,8 +70,6 @@ impl Coordinate {
 
     pub fn get_size(&self) -> usize {
         match self {
-            Self::CornerPermutation => NUM_CORNER_PERMS,
-            Self::CornerOrientation => NUM_CORNER_ORIENTATIONS,
             Self::CornerState => NUM_CORNER_STATES,
             Self::EdgeInFace => NUM_FACE_PIECE_PERMS,
             Self::EdgeAcrossFaces => NUM_ACROSS_FACE_PERMS,
@@ -86,8 +80,6 @@ impl Coordinate {
 
     pub fn get_turn_effect_type(&self) -> TurnEffectType {
         match self {
-            Self::CornerPermutation => TurnEffectType::CornerPermutation,
-            Self::CornerOrientation => TurnEffectType::CornerOrientation,
             Self::CornerState => TurnEffectType::Corner,
             Self::EdgeInFace => TurnEffectType::EdgeInFace,
             Self::EdgeAcrossFaces => TurnEffectType::EdgeAcrossFaces,
@@ -274,7 +266,7 @@ fn sub_permutation_coord(positions: &[u8], num_groups: u32, num_per_group: u32) 
         let mut divider: u32 = 1;
         for j in 1..num_per_group {
             multiplier *= face - j;
-            divider *= j+1;
+            divider *= (j+1);
         }        
         coord *= multiplier / divider;
     }
@@ -347,26 +339,13 @@ mod tests {
     use super::*;
     use test_case::test_case;
 
-    #[test_case(&[0,1,2,3,4,5], 0)]
-    #[test_case(&[2,0,1,3,4,5], 1)]
-    #[test_case(&[4,5,3,2,1,0], 359)]
-    fn test_corner_perm_to_coord(state: &[u8], value: u32) {
-        let coord = Coordinate::CornerPermutation;
-        assert_eq!(coord.state_to_coord(state), value);
-    }
-
-    #[test_case(&[0b00000000], 0)]
-    #[test_case(&[0b00000001], 1)]
-    #[test_case(&[0b00011111], 31)]
-    fn test_corner_orientation_to_coord(state: &[u8], value: u32) {
-        let coord = Coordinate::CornerOrientation;
-        assert_eq!(coord.state_to_coord(state), value);
-    }
-
     #[test_case(&[0,2,4,6,8,10], 0)]
     #[test_case(&[1,2,4,6,8,11], 360)]
     #[test_case(&[4,0,2,6,8,10], 1)]
     #[test_case(&[5,0,2,6,8,11], 361)]
+    #[test_case(&[5,0,2,6,9,10], 721)]
+    #[test_case(&[4,0,2,6,9,11], 1081)]
+    #[test_case(&[0,2,11,6,4,9], 3327)]
     #[test_case(&[8,10,6,4,2,0], 359)]
     #[test_case(&[9,11,7,5,3,1], 11_519)]
     fn test_full_corner_state_to_coord(state: &[u8], value: u32) {
@@ -406,26 +385,13 @@ mod tests {
         assert_eq!(coord.state_to_coord(state), value);
     }
 
-    #[test_case(&[0,1,2,3,4,5], 0)]
-    #[test_case(&[2,0,1,3,4,5], 1)]
-    #[test_case(&[4,5,3,2,1,0], 359)]
-    fn test_invert_corner_perm_coord(state: &[u8], value: u32) {
-        let coord = Coordinate::CornerPermutation;
-        assert_eq!(coord.coord_to_state(value), state);
-    }
-
-    #[test_case(&[0b00000000], 0)]
-    #[test_case(&[0b00000001], 1)]
-    #[test_case(&[0b00011111], 31)]
-    fn test_invert_corner_orientation_coord(state: &[u8], value: u32) {
-        let coord = Coordinate::CornerOrientation;
-        assert_eq!(coord.coord_to_state(value), state);
-    }
-
     #[test_case(&[0,2,4,6,8,10], 0)]
     #[test_case(&[1,2,4,6,8,11], 360)]
     #[test_case(&[4,0,2,6,8,10], 1)]
     #[test_case(&[5,0,2,6,8,11], 361)]
+    #[test_case(&[5,0,2,6,9,10], 721)]
+    #[test_case(&[4,0,2,6,9,11], 1081)]
+    #[test_case(&[0,2,11,6,4,9], 3327)]
     #[test_case(&[8,10,6,4,2,0], 359)]
     #[test_case(&[9,11,7,5,3,1], 11_519)]
     fn test_invert_full_corner_coord(state: &[u8], value: u32) {
