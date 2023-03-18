@@ -5,9 +5,10 @@ mod movedefs;
 mod coordinates;
 mod state;
 mod movetables;
+mod pruningtables;
 
-use crate::movedefs::Face;
-use crate::state::RawState;
+use crate::movedefs::{Face, Turn};
+use crate::state::{CoordState, RawState};
 use crate::movetables::MoveTables;
 
 
@@ -18,17 +19,22 @@ fn main() {
     let move_tables = MoveTables::generate();
     println!("Total time taken: {} seconds", (now.elapsed().as_micros() as f64 / 1_000_000.0));
 
-    let mut state = RawState::solved();
+    let mut raw = RawState::solved();
+    let mut coords = CoordState::solved();
 
-    state.apply(Face::U.turn());
-    state.apply(Face::L.turn());
-    state.apply(Face::F.turn());
-    state.apply(Face::R.turn());
-    state.apply(Face::BL.turn());
-    state.apply(Face::B.turn());
-    state.apply(Face::BR.turn());
-    state.apply(Face::D.turn());
-    
-    let svg_data = drawstate::get_svg_for_state(&state);
-    drawstate::write_svg("test.svg", &svg_data);
+    let sequence = [
+        &Turn::new(Face::R, false),
+        &Turn::new(Face::L, false),
+    ];
+
+    raw.apply_sequence(&sequence);
+    coords.apply_sequence(&move_tables, &sequence);
+
+    let svg_data_coords = drawstate::get_svg_for_state(&coords.to_raw());
+    drawstate::write_svg("coords.svg", &svg_data_coords);
+    let svg_data_raw = drawstate::get_svg_for_state(&raw);
+    drawstate::write_svg("raw.svg", &svg_data_raw);
+
+    println!("Coords: {:?}", coords.to_raw());
+    println!("Raw     {:?}", raw);
 }

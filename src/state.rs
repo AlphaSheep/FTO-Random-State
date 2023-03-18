@@ -1,4 +1,3 @@
-
 /*
     PIECE DEFINITIONS:
     The orientation and face moves match those used in Ben Streeter's document: 
@@ -10,7 +9,7 @@
 
     Corner permutation:
     NOTE: We make a distinction between up corners (corners which have a sticker belonging on the U face) and down corners (with a sticker 
-    belonging on the D face) for conveinience, although mechanically these corners are interchangable and are not tehnically different 
+    belonging on the D face) for conveinience, although mechanically these corners are interchangable and are not technically different 
     piece types. This allows us to label corners with two faces - either U or D, and the face of the sticker that can be interchanged 
     with either U or D. This has advantages for defining orientation.
 
@@ -89,17 +88,23 @@
     physically moved by the turn, as the corner that those centres were attached to moves.
 */
 
-use crate::movedefs::{Face, RawTurn};
+use crate::coordinates::Coordinate;
+use crate::movedefs::{Face, RawTurn, NUM_CORNERS, NUM_CENTRES, Turn};
 use crate::movetables::MoveTables;
 
 
-#[derive(Clone, Copy)]
+// Triple centres depend on the definitions for down centres and corner state.
+const CORNER_MAIN_TRIPLE_CENTRE: [usize; NUM_CORNERS] = [6, 0, 3, 11, 10, 9];
+const CORNER_FLIPPED_TRIPLE_CENTRE: [usize; NUM_CORNERS] = [1, 4, 7, 2, 5, 8];
+
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct RawState {
-    pub corners: [u8; 6],
+    pub corners: Vec<u8>,
     pub corner_orientation: u8,
-    pub edges: [u8; 12],
-    pub up_centres: [u8; 12],
-    pub down_centres: [u8; 12],
+    pub edges: Vec<u8>,
+    pub up_centres: Vec<u8>,
+    pub down_centres: Vec<u8>,
 }
 
 impl RawState {
@@ -114,21 +119,180 @@ impl RawState {
     }
 
     pub fn solved() -> Self {
-        let corners: [u8; 6] = [0,1,2,3,4,5];
-        let corner_orientation: u8 = 0b000000;
-        let edges: [u8; 12] = [0,1,2,3,4,5,6,7,8,9,10,11];
-        let up_centres: [u8; 12] = [0,0,0,3,3,3,6,6,6,9,9,9];
-        let down_centres: [u8; 12] = [0,0,0,3,3,3,6,6,6,9,9,9];
+        let corners = vec![0,1,2,3,4,5];
+        let corner_orientation = 0b000000;
+        let edges = vec![0,1,2,3,4,5,6,7,8,9,10,11];
+        let up_centres = vec![0,0,0,3,3,3,6,6,6,9,9,9];
+        let down_centres = vec![0,0,0,3,3,3,6,6,6,9,9,9];
 
         Self::new(&corners, corner_orientation, &edges, &up_centres, &down_centres)
     }
 
-    pub fn apply(&mut self, m: &RawTurn) {
+    pub fn apply_sequence(&mut self, sequence: &[&Turn]) {
+        for turn in sequence {
+            self.apply(turn);
+        }
+    }
+
+    pub fn apply(&mut self, turn: &Turn) {
+        let m: &RawTurn = turn.face.turn();
+
         apply_raw_permutation(&mut self.corners, &m.corner_permutation);
         apply_orientation(&mut self.corner_orientation, &m.corner_permutation, &m.corner_orientation[0]);
         apply_raw_permutation(&mut self.edges, &m.edges);
         apply_raw_permutation(&mut self.up_centres, &m.up_centres);
         apply_raw_permutation(&mut self.down_centres, &m.down_centres);
+        
+        if turn.invert {
+            self.apply(&Turn::new(turn.face, false));
+        }
+    }
+
+    pub fn to_coords(&self) -> CoordState {
+        CoordState {
+            corners: self.get_corner_coord(),
+            edges_within_faces: self.get_edge_within_face(),
+            edges_across_faces: self.get_edge_across_face(),
+            up_centres: self.get_up_centres(),
+            triple_centres: self.get_triple_centres(),
+        }
+    }
+
+    fn get_corner_coord(&self) -> u32 {
+        let mut state = self.corners.clone();
+        let mut orientation = self.corner_orientation;
+        let mut first_flip: u8 = 0;
+        for i in (1..NUM_CORNERS).rev() {
+            let flip = orientation % 2;
+            orientation /= 2;
+            
+            first_flip ^= flip;
+            state[i] = state[i]*2 + flip;
+        }
+        state[0] = state[0]*2 + first_flip;
+        Coordinate::CornerState.state_to_coord(&state)
+    }
+
+    fn get_edge_within_face(&self) -> u32 {
+        Coordinate::EdgeInFace.state_to_coord(&self.edges)
+    }
+
+    fn get_edge_across_face(&self) -> u32 {
+        Coordinate::EdgeAcrossFaces.state_to_coord(&self.edges)
+    }
+
+    fn get_up_centres(&self) -> u32 {
+        Coordinate::UpCentre.state_to_coord(&self.up_centres)
+    }
+
+    fn get_triple_centres(&self) -> u32 {
+        let mut state = self.down_centres.clone();
+        apply_raw_permutation(state.as_mut_slice(), &self.corners); // This is stupid. There are 12 centres, 6 corners. We need to map it.
+        // panic!("Triple centres to and from down centres conversion is wrong");
+        Coordinate::TripleCentre.state_to_coord(&state)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CoordState {
+    pub corners: u32,
+    pub edges_within_faces: u32,
+    pub edges_across_faces: u32,
+    pub up_centres: u32,
+    pub triple_centres: u32,
+}
+
+impl CoordState {
+    pub fn solved() -> Self {
+        Self {
+            corners: 0,
+            edges_within_faces: 0,
+            edges_across_faces: 0,
+            up_centres: 0,
+            triple_centres: 0,
+        }
+    }
+
+    pub fn apply_sequence(&mut self, move_tables: &MoveTables, sequence: &[&Turn]) {
+        for turn in sequence {
+            self.apply(move_tables, turn);
+        }
+    }
+
+    pub fn apply(&mut self, move_tables: &MoveTables, turn: &Turn) {
+        self.corners = move_tables.apply_move_to_coord(self.corners, Coordinate::CornerState, turn);
+        self.edges_within_faces = move_tables.apply_move_to_coord(self.edges_within_faces, Coordinate::EdgeInFace, turn);
+        self.edges_across_faces = move_tables.apply_move_to_coord(self.edges_across_faces, Coordinate::EdgeAcrossFaces, turn);
+        self.up_centres = move_tables.apply_move_to_coord(self.up_centres, Coordinate::UpCentre, turn);
+        self.triple_centres = move_tables.apply_move_to_coord(self.triple_centres, Coordinate::TripleCentre, turn);
+    }
+
+    pub fn to_raw(&self) -> RawState {
+        RawState {
+            corners: self.get_corner_permutation(),
+            corner_orientation: self.get_corner_orientation(),
+            edges: self.get_edges(),
+            up_centres: self.get_up_centres(),
+            down_centres: self.get_down_centres(),
+        }
+    }
+
+    fn get_corner_permutation(&self) -> Vec<u8> {
+        let mut corner_permutation = Coordinate::CornerState.coord_to_state(self.corners);
+        for i in 0..corner_permutation.len() {
+            corner_permutation[i] /= 2;        
+        }
+        corner_permutation
+    } 
+
+    fn get_corner_orientation(&self) -> u8 {
+        let mut orientation = (self.corners / 360) as u8;
+        // This is the orientation of the last 5 corners. We need to calculate whether the remaining corner 
+        // needs to be flipped.
+        let mut temp = orientation;
+        let mut first_flip: u8 = 0;
+        for _ in 0..NUM_CORNERS {
+            first_flip ^= temp % 2;
+            temp /= 2;
+        }
+        orientation += first_flip << 5;
+        orientation
+    }
+
+    fn get_edges(&self) -> Vec<u8> {
+        let mut state = Coordinate::EdgeInFace.coord_to_state(self.edges_within_faces);
+        let across_face = Coordinate::EdgeAcrossFaces.coord_to_state(self.edges_across_faces);
+        for i in 0..state.len() {
+            state[i] += across_face[i];
+        }
+        state
+    }
+
+    fn get_up_centres(&self) -> Vec<u8> {
+        Coordinate::UpCentre.coord_to_state(self.up_centres)
+    }
+    
+    fn get_down_centres(&self) -> Vec<u8> {
+        let triple_centres = Coordinate::TripleCentre.coord_to_state(self.triple_centres);
+        let corner_state = Coordinate::CornerState.coord_to_state(self.corners);
+        
+        let mut state = triple_centres.clone();
+        let mut main = CORNER_MAIN_TRIPLE_CENTRE.clone();
+        let mut flip = CORNER_FLIPPED_TRIPLE_CENTRE.clone();
+
+        for i in 0..corner_state.len() {
+            let index = (corner_state[i] / 2) as usize;
+            let flipped = (corner_state[i] % 2) == 1;
+            state[CORNER_MAIN_TRIPLE_CENTRE[i]] = triple_centres[CORNER_MAIN_TRIPLE_CENTRE[index]];
+            state[CORNER_FLIPPED_TRIPLE_CENTRE[i]] = triple_centres[CORNER_FLIPPED_TRIPLE_CENTRE[index]];
+            if flipped {
+                state.swap(CORNER_MAIN_TRIPLE_CENTRE[i], CORNER_FLIPPED_TRIPLE_CENTRE[i]);
+            }
+        }
+        println!("triples: {:?}", triple_centres);
+        println!("corners: {:?}", corner_state);
+        println!("downs: {:?}", state);
+        state
     }
 }
 
@@ -236,5 +400,40 @@ mod tests {
         let mut state : [u8;6] = start_state;
         apply_full_corner(&mut state, permutation_effect, orientation_effect);
         assert_eq!(state, expected);
+    }
+
+    #[test]
+    fn test_to_raw() {
+        let mut coord_state = CoordState::solved();
+        let mut raw_state = coord_state.to_raw();
+        let mut expected = RawState::solved();
+        assert_eq!(raw_state, expected);
+
+        coord_state.corners = 360;
+        raw_state = coord_state.to_raw();
+        expected.corner_orientation = 33;
+
+        // Flip triples
+        expected.down_centres.swap(CORNER_MAIN_TRIPLE_CENTRE[0], CORNER_FLIPPED_TRIPLE_CENTRE[0]);        
+        expected.down_centres.swap(CORNER_MAIN_TRIPLE_CENTRE[5], CORNER_FLIPPED_TRIPLE_CENTRE[5]);
+
+        assert_eq!(raw_state, expected);
+    }
+
+    #[test]
+    fn test_to_coord() {
+        let mut raw_state = RawState::solved();
+        let mut coord_state = raw_state.to_coords();
+        let mut expected = CoordState::solved();
+        assert_eq!(coord_state, expected);
+
+        raw_state.corner_orientation = 33;        
+        raw_state.down_centres.swap(CORNER_MAIN_TRIPLE_CENTRE[0], CORNER_FLIPPED_TRIPLE_CENTRE[0]);        
+        raw_state.down_centres.swap(CORNER_MAIN_TRIPLE_CENTRE[5], CORNER_FLIPPED_TRIPLE_CENTRE[5]);
+
+        coord_state = raw_state.to_coords();
+        expected.corners = 360;
+
+        assert_eq!(coord_state, expected);
     }
 }

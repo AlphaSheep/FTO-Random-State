@@ -6,9 +6,9 @@ use crate::movedefs::{TurnEffectType, NUM_CORNERS, NUM_EDGES, NUM_CENTRES};
 
 
 pub const NUM_CORNER_PERMS: usize = 360;
-pub const NUM_CORNER_ORIENTATIONS: usize = 32;
+// pub const NUM_CORNER_ORIENTATIONS: usize = 32;
 pub const NUM_CORNER_STATES: usize = 11_520;
-pub const NUM_EDGE_PERMS: usize = 239_500_800;
+// pub const NUM_EDGE_PERMS: usize = 239_500_800;
 pub const NUM_FACE_PIECE_PERMS: usize = 369_600;
 pub const NUM_ACROSS_FACE_PERMS: usize = 34_650;
 
@@ -34,6 +34,7 @@ pub enum Coordinate {
     EdgeInFace,
     EdgeAcrossFaces,
     UpCentre,
+    DownCentre,
     TripleCentre,
 }
 
@@ -44,7 +45,8 @@ impl Coordinate {
             Self::EdgeInFace,
             Self::EdgeAcrossFaces,
             Self::UpCentre,
-            Self::TripleCentre,
+            Self::DownCentre,
+            // Self::TripleCentre,
         ].iter().copied()
     }
 
@@ -54,6 +56,7 @@ impl Coordinate {
             Self::EdgeInFace => face_position_to_coord(state),
             Self::EdgeAcrossFaces => perm_across_face_coord(state),
             Self::UpCentre => face_position_to_coord(state),
+            Self::DownCentre => face_position_to_coord(state),
             Self::TripleCentre => face_position_to_coord(state),
         }
     }
@@ -64,6 +67,7 @@ impl Coordinate {
             Self::EdgeInFace => invert_coord_to_face_positions(coord).to_vec(),
             Self::EdgeAcrossFaces => invert_coord_to_perm_across_face(coord).to_vec(),
             Self::UpCentre => invert_coord_to_face_positions(coord).to_vec(),
+            Self::DownCentre => invert_coord_to_face_positions(coord).to_vec(),
             Self::TripleCentre => invert_coord_to_face_positions(coord).to_vec(),
         }
     }
@@ -74,6 +78,7 @@ impl Coordinate {
             Self::EdgeInFace => NUM_FACE_PIECE_PERMS,
             Self::EdgeAcrossFaces => NUM_ACROSS_FACE_PERMS,
             Self::UpCentre => NUM_FACE_PIECE_PERMS,
+            Self::DownCentre => NUM_FACE_PIECE_PERMS,
             Self::TripleCentre => NUM_FACE_PIECE_PERMS,
         }
     }
@@ -84,7 +89,31 @@ impl Coordinate {
             Self::EdgeInFace => TurnEffectType::EdgeInFace,
             Self::EdgeAcrossFaces => TurnEffectType::EdgeAcrossFaces,
             Self::UpCentre => TurnEffectType::UpCentre,
+            Self::DownCentre => TurnEffectType::TripleCentre,
             Self::TripleCentre => TurnEffectType::TripleCentre,
+        }
+    }
+
+    pub fn to_byte(&self) -> u8 {
+        match self {
+            Self::CornerState => b'C',
+            Self::EdgeInFace => b'E',
+            Self::EdgeAcrossFaces => b'A',
+            Self::UpCentre => b'U',
+            Self::DownCentre => b'D',
+            Self::TripleCentre => b'T',
+        }
+    }
+
+    pub fn from_byte(byte: u8) -> Self {
+        match byte {          
+            b'C' => Self::CornerState,
+            b'E' => Self::EdgeInFace,
+            b'A' => Self::EdgeAcrossFaces,
+            b'U' => Self::UpCentre,
+            b'D' => Self::DownCentre,
+            b'T' => Self::TripleCentre,
+            _ => panic!("Unrcognised coordinate type")
         }
     }
 }
@@ -160,7 +189,7 @@ fn invert_coord_to_corner_state(coord: u32) -> [u8; NUM_CORNERS] {
         first_flip ^= flip;
         state[i] *= 2;
         state[i] += flip;
-    }
+    }    
     state[0] *= 2;
     state[0] += first_flip;
     state
@@ -516,8 +545,6 @@ mod tests {
     fn test_invert_single_face_centre_coord(coord: u32, num: u8, size: u8, fill: u8, expected: &[u8]) {
         assert_eq!(invert_single_face_centre_coord(coord, num, size, fill), expected);
     }
-
-
 
     #[test]
     fn test_precompute_binomial_table() {

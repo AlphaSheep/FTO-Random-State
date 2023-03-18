@@ -28,7 +28,7 @@ pub const NUM_EDGES: usize = 12;
 pub const NUM_CENTRES: usize = 12;
 
 
-const TURN_U: RawTurn = RawTurn {
+const RAW_TURN_U: RawTurn = RawTurn { 
     corner_full_state: [0; 7],
     corner_permutation: [2,0,1,3,4,5],
     corner_orientation: [0b000000],
@@ -37,7 +37,7 @@ const TURN_U: RawTurn = RawTurn {
     down_centres: [6,7,2,0,1,5,3,4,8,9,10,11],
     triple_centres: [0,1,2,3,4,5,6,7,8,9,10,11],
 };   
-const TURN_F: RawTurn = RawTurn {
+const RAW_TURN_F: RawTurn = RawTurn { 
     corner_full_state: [0; 7],
     corner_permutation: [0,1,5,3,2,4],
     corner_orientation: [0b001001],
@@ -46,7 +46,7 @@ const TURN_F: RawTurn = RawTurn {
     down_centres: [0,1,2,8,4,7,6,9,10,5,3,11],
     triple_centres: [0,1,2,3,4,5,6,7,8,9,10,11],
 };
-const TURN_BL: RawTurn = RawTurn {
+const RAW_TURN_BL: RawTurn = RawTurn { 
     corner_full_state: [0; 7],
     corner_permutation: [3,1,2,5,4,0],
     corner_orientation: [0b100100],
@@ -55,7 +55,7 @@ const TURN_BL: RawTurn = RawTurn {
     down_centres: [0,11,9,3,4,5,2,7,1,6,10,8],
     triple_centres: [0,1,2,3,4,5,6,7,8,9,10,11],
 };
-const TURN_BR: RawTurn = RawTurn {
+const RAW_TURN_BR: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [0,4,2,1,3,5],
     corner_orientation: [0b010010],
@@ -68,41 +68,41 @@ const TURN_BR: RawTurn = RawTurn {
 // Down Centres:
 //      0   1   2   3   4   5   6   7   8   9   10  11
 //      BR  BL  BD  RL  RB  RD  LB  LR  LD  DL  DR  DB   
-const TURN_L: RawTurn = RawTurn {
+const RAW_TURN_L: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [5,1,0,3,4,2],
     corner_orientation: [0b101000],
     edges: [0,1,4,3,9,5,6,7,8,2,10,11],
     up_centres: [4,1,3,11,9,5,6,7,8,0,10,2],
     down_centres: [0,1,2,3,4,5,8,6,7,9,10,11],
-    triple_centres: [0,9,2,1,4,5,6,7,8,3,10,11],
+    triple_centres: [0,3,2,9,4,5,6,7,8,1,10,11],
 };
-const TURN_R: RawTurn = RawTurn {
+const RAW_TURN_R: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [0,2,4,3,1,5],
     corner_orientation: [0b011000],
     edges: [0,10,2,3,4,5,1,7,8,9,6,11],
     up_centres: [0,9,10,3,4,5,2,7,1,8,6,11],
     down_centres: [0,1,2,5,3,4,6,7,8,9,10,11],
-    triple_centres: [7,1,2,3,4,5,6,10,8,9,0,11],
+    triple_centres: [10,1,2,3,4,5,6,0,8,9,7,11],
 };
-const TURN_B: RawTurn = RawTurn {
+const RAW_TURN_B: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [1,3,2,0,4,5],
     corner_orientation: [0b110000],
     edges: [7,1,2,0,4,5,6,3,8,9,10,11],
     up_centres: [6,7,2,1,4,0,5,3,8,9,10,11],
     down_centres: [2,0,1,3,4,5,6,7,8,9,10,11],
-    triple_centres: [0,1,2,3,11,5,4,7,8,9,10,6],
+    triple_centres: [0,1,2,3,6,5,11,7,8,9,10,4],
 };
-const TURN_D: RawTurn = RawTurn {
+const RAW_TURN_D: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [0,1,2,4,5,3],
     corner_orientation: [0b000000],
     edges: [0,1,2,3,4,8,6,7,11,9,10,5],
     up_centres: [0,1,2,3,7,8,6,10,11,9,4,5],
     down_centres: [0,1,2,3,4,5,6,7,8,11,9,10],
-    triple_centres: [0,5,2,3,4,8,6,7,1,9,10,11],
+    triple_centres: [0,1,8,3,4,2,6,7,5,9,10,11],
 };
 
 
@@ -139,6 +139,11 @@ pub struct RawTurn {
     pub triple_centres: [u8; 12],
 }
 
+pub struct Turn {
+    pub face: Face,
+    pub invert: bool
+}
+
 impl Face {
     pub fn get_up_faces() -> [Self; 4] {
         [Self::U, Self::F, Self::BL, Self::BR]
@@ -160,14 +165,14 @@ impl Face {
 impl RawTurn {
     pub fn get(face: Face) -> &'static Self {
         match face {
-            Face::U => &TURN_U,
-            Face::F => &TURN_F,
-            Face::BL => &TURN_BL,
-            Face::BR => &TURN_BR,
-            Face::L => &TURN_L,
-            Face::R => &TURN_R,
-            Face::B => &TURN_B,
-            Face::D => &TURN_D
+            Face::U => &RAW_TURN_U,
+            Face::F => &RAW_TURN_F,
+            Face::BL => &RAW_TURN_BL,
+            Face::BR => &RAW_TURN_BR,
+            Face::L => &RAW_TURN_L,
+            Face::R => &RAW_TURN_R,
+            Face::B => &RAW_TURN_B,
+            Face::D => &RAW_TURN_D
         }
     }
 
@@ -201,15 +206,25 @@ impl RawTurn {
     pub fn get_effect(&self, effect_type: TurnEffectType) -> Cow<[u8]> {
         match effect_type {
             TurnEffectType::Corner => self.get_corner_full_state(),
-            TurnEffectType::CornerPermutation => Cow::Borrowed(&self.corner_permutation),
-            TurnEffectType::CornerOrientation => Cow::Borrowed(&self.corner_orientation),
-            TurnEffectType::EdgeInFace => Cow::Borrowed(&self.edges),
-            TurnEffectType::EdgeAcrossFaces => Cow::Borrowed(&self.edges),
-            TurnEffectType::UpCentre => Cow::Borrowed(&self.up_centres),
+            TurnEffectType::CornerPermutation => Cow::Borrowed(&self.corner_permutation), 
+            TurnEffectType::CornerOrientation => Cow::Borrowed(&self.corner_orientation), 
+            TurnEffectType::EdgeInFace => Cow::Borrowed(&self.edges), 
+            TurnEffectType::EdgeAcrossFaces => Cow::Borrowed(&self.edges), 
+            TurnEffectType::UpCentre => Cow::Borrowed(&self.up_centres), 
             TurnEffectType::TripleCentre => Cow::Borrowed(&self.triple_centres),
         }
     }
 }
+
+impl Turn {
+    pub fn new(face: Face, invert: bool) -> Self {
+        Self {
+            face, 
+            invert,
+         }
+    }
+}
+
 
 
 #[cfg(test)]
@@ -218,63 +233,63 @@ mod tests {
 
     #[test]
     fn test_get_single_turn() {
-        assert_eq!(RawTurn::get(Face::U), &TURN_U);
-        assert_eq!(RawTurn::get(Face::F), &TURN_F);
-        assert_eq!(RawTurn::get(Face::R), &TURN_R);
-        assert_eq!(RawTurn::get(Face::L), &TURN_L);
-        assert_eq!(RawTurn::get(Face::B), &TURN_B);
-        assert_eq!(RawTurn::get(Face::D), &TURN_D);
-        assert_eq!(RawTurn::get(Face::BR), &TURN_BR);
-        assert_eq!(RawTurn::get(Face::BL), &TURN_BL);
+        assert_eq!(RawTurn::get(Face::U), &RAW_TURN_U);
+        assert_eq!(RawTurn::get(Face::F), &RAW_TURN_F);
+        assert_eq!(RawTurn::get(Face::R), &RAW_TURN_R);
+        assert_eq!(RawTurn::get(Face::L), &RAW_TURN_L);
+        assert_eq!(RawTurn::get(Face::B), &RAW_TURN_B);
+        assert_eq!(RawTurn::get(Face::D), &RAW_TURN_D);
+        assert_eq!(RawTurn::get(Face::BR), &RAW_TURN_BR);
+        assert_eq!(RawTurn::get(Face::BL), &RAW_TURN_BL);
     }
 
     #[test]
     fn test_get_single_turn_for_face() {
-        assert_eq!(Face::U.turn(), &TURN_U);
-        assert_eq!(Face::F.turn(), &TURN_F);
-        assert_eq!(Face::R.turn(), &TURN_R);
-        assert_eq!(Face::L.turn(), &TURN_L);
-        assert_eq!(Face::B.turn(), &TURN_B);
-        assert_eq!(Face::D.turn(), &TURN_D);
-        assert_eq!(Face::BR.turn(), &TURN_BR);
-        assert_eq!(Face::BL.turn(), &TURN_BL);
+        assert_eq!(Face::U.turn(), &RAW_TURN_U);
+        assert_eq!(Face::F.turn(), &RAW_TURN_F);
+        assert_eq!(Face::R.turn(), &RAW_TURN_R);
+        assert_eq!(Face::L.turn(), &RAW_TURN_L);
+        assert_eq!(Face::B.turn(), &RAW_TURN_B);
+        assert_eq!(Face::D.turn(), &RAW_TURN_D);
+        assert_eq!(Face::BR.turn(), &RAW_TURN_BR);
+        assert_eq!(Face::BL.turn(), &RAW_TURN_BL);
     }
 
     #[test]
     fn test_get_all_turns() {
         let turns = RawTurn::get_all();
-        let expected = vec![&TURN_U, &TURN_F, &TURN_BL, &TURN_BR, &TURN_L, &TURN_R, &TURN_B, &TURN_D];
+        let expected = vec![&RAW_TURN_U, &RAW_TURN_F, &RAW_TURN_BL, &RAW_TURN_BR, &RAW_TURN_L, &RAW_TURN_R, &RAW_TURN_B, &RAW_TURN_D];
         assert_eq!(turns, expected);
     }
 
     #[test]
     fn test_get_up_turns() {
         let turns = RawTurn::get_for_up_faces();
-        let expected = vec![&TURN_U, &TURN_F, &TURN_BL, &TURN_BR];
+        let expected = vec![&RAW_TURN_U, &RAW_TURN_F, &RAW_TURN_BL, &RAW_TURN_BR];
         assert_eq!(turns, expected);
     }
 
     #[test]
     fn test_get_down_turns() {
         let turns = RawTurn::get_for_down_faces();
-        let expected = vec![&TURN_L, &TURN_R, &TURN_B, &TURN_D];
+        let expected = vec![&RAW_TURN_L, &RAW_TURN_R, &RAW_TURN_B, &RAW_TURN_D];
         assert_eq!(turns, expected);
     }
 
     #[test]
     fn test_get_turn_effect_type() {
-        assert_eq!(TURN_U.get_effect(TurnEffectType::CornerPermutation).as_ref(), &TURN_U.corner_permutation);
-        assert_eq!(TURN_U.get_effect(TurnEffectType::CornerOrientation).as_ref(), &TURN_U.corner_orientation);
-        assert_eq!(TURN_U.get_effect(TurnEffectType::EdgeInFace).as_ref(), &TURN_U.edges);
-        assert_eq!(TURN_U.get_effect(TurnEffectType::EdgeAcrossFaces).as_ref(), &TURN_U.edges);
-        assert_eq!(TURN_U.get_effect(TurnEffectType::UpCentre).as_ref(), &TURN_U.up_centres);
-        assert_eq!(TURN_U.get_effect(TurnEffectType::TripleCentre).as_ref(), &TURN_U.triple_centres);
+        assert_eq!(RAW_TURN_U.get_effect(TurnEffectType::CornerPermutation).as_ref(), &RAW_TURN_U.corner_permutation);
+        assert_eq!(RAW_TURN_U.get_effect(TurnEffectType::CornerOrientation).as_ref(), &RAW_TURN_U.corner_orientation);
+        assert_eq!(RAW_TURN_U.get_effect(TurnEffectType::EdgeInFace).as_ref(), &RAW_TURN_U.edges);
+        assert_eq!(RAW_TURN_U.get_effect(TurnEffectType::EdgeAcrossFaces).as_ref(), &RAW_TURN_U.edges);
+        assert_eq!(RAW_TURN_U.get_effect(TurnEffectType::UpCentre).as_ref(), &RAW_TURN_U.up_centres);
+        assert_eq!(RAW_TURN_U.get_effect(TurnEffectType::TripleCentre).as_ref(), &RAW_TURN_U.triple_centres);
 
-        assert_eq!(TURN_D.get_effect(TurnEffectType::CornerPermutation).as_ref(), &TURN_D.corner_permutation);
-        assert_eq!(TURN_D.get_effect(TurnEffectType::CornerOrientation).as_ref(), &TURN_D.corner_orientation);
-        assert_eq!(TURN_D.get_effect(TurnEffectType::EdgeInFace).as_ref(), &TURN_D.edges);
-        assert_eq!(TURN_D.get_effect(TurnEffectType::EdgeAcrossFaces).as_ref(), &TURN_D.edges);
-        assert_eq!(TURN_D.get_effect(TurnEffectType::UpCentre).as_ref(), &TURN_D.up_centres);
-        assert_eq!(TURN_D.get_effect(TurnEffectType::TripleCentre).as_ref(), &TURN_D.triple_centres);
+        assert_eq!(RAW_TURN_D.get_effect(TurnEffectType::CornerPermutation).as_ref(), &RAW_TURN_D.corner_permutation);
+        assert_eq!(RAW_TURN_D.get_effect(TurnEffectType::CornerOrientation).as_ref(), &RAW_TURN_D.corner_orientation);
+        assert_eq!(RAW_TURN_D.get_effect(TurnEffectType::EdgeInFace).as_ref(), &RAW_TURN_D.edges);
+        assert_eq!(RAW_TURN_D.get_effect(TurnEffectType::EdgeAcrossFaces).as_ref(), &RAW_TURN_D.edges);
+        assert_eq!(RAW_TURN_D.get_effect(TurnEffectType::UpCentre).as_ref(), &RAW_TURN_D.up_centres);
+        assert_eq!(RAW_TURN_D.get_effect(TurnEffectType::TripleCentre).as_ref(), &RAW_TURN_D.triple_centres);
     }
 }

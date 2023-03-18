@@ -1,12 +1,12 @@
 use std::collections::HashMap;
 
 use crate::coordinates::Coordinate;
-use crate::movedefs::{RawTurn, Face, TurnEffectType};
+use crate::movedefs::{RawTurn, Face, TurnEffectType, Turn};
 use crate::state::{apply_raw_permutation, apply_full_corner};
 
 
 pub struct MoveTables {
-    tables: HashMap<Coordinate, MoveTable>,
+    pub tables: HashMap<Coordinate, MoveTable>,
 }
 
 impl MoveTables {
@@ -22,29 +22,38 @@ impl MoveTables {
             tables
         }
     }
+
+    pub fn apply_move_to_coord(&self, coord: u32, coord_type: Coordinate, turn: &Turn) -> u32 {
+        let table = self.tables.get(&coord_type).unwrap();
+        table.apply_move_to_coord(coord, turn)
+    }
 }
 
-struct MoveTable {
+pub struct MoveTable {
     initialised: bool,
     populated: bool,
 
     coord_type: Coordinate,
 
-    table: HashMap<Face, Vec<u32>>,
-    inverse_table: HashMap<Face, Vec<u32>>,
+    pub table: HashMap<Face, Vec<u32>>,
+    pub inverse_table: HashMap<Face, Vec<u32>>,
 }
 
 impl MoveTable {
-    pub fn new(coord_type: Coordinate) -> Self {
-        let mut move_table = Self {
+    fn empty(coord_type: Coordinate) -> Self {
+        Self {
             initialised: false,
             populated: false,
 
             coord_type,
 
-            table: HashMap::new(),        
+             table: HashMap::new(),        
             inverse_table: HashMap::new(), 
-        };
+        }
+    }
+
+    pub fn new(coord_type: Coordinate) -> Self {
+        let mut move_table = Self::empty(coord_type);
         move_table.init();
         move_table.populate();
         move_table
@@ -56,7 +65,6 @@ impl MoveTable {
             self.table.insert(face, vec![u32::MAX; self.coord_type.get_size()]);
             self.inverse_table.insert(face, vec![u32::MAX; self.coord_type.get_size()]);
         }
-
         self.initialised = true;
     }
 
@@ -72,7 +80,7 @@ impl MoveTable {
                 }
 
                 let turn = RawTurn::get(face);
-
+                
                 let mut cycle = [start_coord, 0, 0];
 
                 apply_turn_to_state(&mut state, turn, coord_type.get_turn_effect_type());
@@ -90,11 +98,11 @@ impl MoveTable {
         self.populated = true;
     }
 
-    pub fn apply_move_to_coord(&self, coord: u32, face: &Face, invert: bool) -> u32 {
-        let move_table = if invert {
-            self.inverse_table.get(face).unwrap()
+    pub fn apply_move_to_coord(&self, coord: u32, turn: &Turn) -> u32 {
+        let move_table = if turn.invert {
+            self.inverse_table.get(&turn.face).unwrap()
         } else {
-            self.table.get(face).unwrap()
+            self.table.get(&turn.face).unwrap()
         };
         move_table[coord as usize]
     }
@@ -148,15 +156,15 @@ mod tests {
     fn test_move_tables() {
         // Because generating the table is slow, we do it once then do all the checks we need to
         // We choose corner state because it needs the shortest time to generate
-        let coord = Coordinate::CornerState;
+        let coord = Coordinate::CornerState; 
         let move_table = MoveTable::new(coord);
 
         let start_coord: u32 = 0;
         let end_coord: u32 = 3327;
-        let coord = move_table.apply_move_to_coord(start_coord, &Face::F, false);
+        let coord = move_table.apply_move_to_coord(start_coord, &Turn::new(Face::F, false));
         assert_eq!(coord, end_coord);
 
-        let coord = move_table.apply_move_to_coord(end_coord, &Face::F, true);
+        let coord = move_table.apply_move_to_coord(end_coord, &Turn::new(Face::F, true));
         assert_eq!(coord, start_coord);
     }
 }
