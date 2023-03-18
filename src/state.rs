@@ -339,6 +339,8 @@ fn precompute_solved_triple_centre_coords() -> [u32; NUM_CORNER_STATES] {
 
 #[cfg(test)]
 mod tests {
+    use crate::movedefs::Face;
+
     use super::*;
     use test_case::test_case;
 
@@ -418,5 +420,42 @@ mod tests {
         expected.corners = 360;
 
         assert_eq!(coord_state, expected);
+    }
+
+    #[test]
+    fn test_apply_move() {
+        let mut state = RawState::solved();
+        
+        state.apply(&Turn::new(Face::U, false));
+
+        let expected = RawState::new(
+            &[2,0,1,3,4,5],
+            0,
+            &[2,0,1,3,4,5,6,7,8,9,10,11],
+            &[0,0,0,3,3,3,6,6,6,9,9,9],
+            &[6,6,0,0,0,3,3,3,6,9,9,9]
+        );
+
+        assert_eq!(state, expected);
+    }
+
+    #[test]
+    fn test_apply_move_sequence() {
+        let mut state = RawState::solved();
+        
+        state.apply_sequence(&[
+            &Turn::new(Face::U, true),
+            &Turn::new(Face::U, true)
+        ]);
+
+        let expected = RawState::new(
+            &[2,0,1,3,4,5],
+            0,
+            &[2,0,1,3,4,5,6,7,8,9,10,11],
+            &[0,0,0,3,3,3,6,6,6,9,9,9],
+            &[6,6,0,0,0,3,3,3,6,9,9,9]
+        );
+
+        assert_eq!(state, expected);
     }
 }

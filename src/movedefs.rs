@@ -255,7 +255,6 @@ impl Turn {
 }
 
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -303,6 +302,22 @@ mod tests {
         let turns = RawTurn::get_for_down_faces();
         let expected = vec![&RAW_TURN_L, &RAW_TURN_R, &RAW_TURN_B, &RAW_TURN_D];
         assert_eq!(turns, expected);
+    }
+
+    #[test]
+    fn test_face_to_and_from_byte() {
+        let mut seen_bytes = Vec::new();
+        for face in Face::get_all_faces() {
+            let byte = face.to_byte();
+            let converted_face = Face::from_byte(byte);
+            
+            assert_eq!(face, converted_face);
+            
+            for seen in &seen_bytes {
+                assert_ne!(*seen, byte);
+            }
+            seen_bytes.push(byte);
+        }
     }
 
     #[test]
