@@ -91,7 +91,7 @@
 use lazy_static::lazy_static;
 use rand::{thread_rng, Rng};
 
-use crate::coordinates::{Coordinate, NUM_CORNER_STATES, get_down_centre_coord_for_matched_triples, NUM_FACE_PIECE_PERMS, NUM_ACROSS_FACE_PERMS};
+use crate::coordinates::{CoordinateType, NUM_CORNER_STATES, get_down_centre_coord_for_matched_triples, NUM_FACE_PIECE_PERMS, NUM_ACROSS_FACE_PERMS};
 use crate::movedefs::{RawTurn, NUM_CORNERS, Turn};
 use crate::movetables::{MoveTables, ApplyMove};
 
@@ -146,7 +146,7 @@ impl RawState {
     }
 
     pub fn apply(&mut self, turn: &Turn) {
-        let m: &RawTurn = turn.face.turn();
+        let m: &RawTurn = turn.face.get_raw_turn();
 
         apply_raw_permutation(&mut self.corners, &m.corner_permutation);
         apply_orientation(&mut self.corner_orientation, &m.corner_permutation, &m.corner_orientation[0]);
@@ -181,23 +181,23 @@ impl RawState {
             state[i] = state[i]*2 + flip;
         }
         state[0] = state[0]*2 + first_flip;
-        Coordinate::CornerState.state_to_coord(&state)
+        CoordinateType::CornerState.state_to_coord(&state)
     }
 
     fn get_edge_within_face(&self) -> u32 {
-        Coordinate::EdgeInFace.state_to_coord(&self.edges)
+        CoordinateType::EdgeInFace.state_to_coord(&self.edges)
     }
 
     fn get_edge_across_face(&self) -> u32 {
-        Coordinate::EdgeAcrossFaces.state_to_coord(&self.edges)
+        CoordinateType::EdgeAcrossFaces.state_to_coord(&self.edges)
     }
 
     fn get_up_centres(&self) -> u32 {
-        Coordinate::UpCentre.state_to_coord(&self.up_centres)
+        CoordinateType::UpCentre.state_to_coord(&self.up_centres)
     }
 
     fn get_down_centres(&self) -> u32 {
-        Coordinate::DownCentre.state_to_coord(&self.down_centres)
+        CoordinateType::DownCentre.state_to_coord(&self.down_centres)
     }
 }
 
@@ -230,11 +230,11 @@ impl CoordState {
     }
 
     pub fn apply(&mut self, move_tables: &MoveTables, turn: &Turn) {
-        self.corners = move_tables.apply_move_to_coord(self.corners, Coordinate::CornerState, turn);
-        self.edges_within_faces = move_tables.apply_move_to_coord(self.edges_within_faces, Coordinate::EdgeInFace, turn);
-        self.edges_across_faces = move_tables.apply_move_to_coord(self.edges_across_faces, Coordinate::EdgeAcrossFaces, turn);
-        self.up_centres = move_tables.apply_move_to_coord(self.up_centres, Coordinate::UpCentre, turn);
-        self.down_centres = move_tables.apply_move_to_coord(self.down_centres, Coordinate::DownCentre, turn);
+        self.corners = move_tables.apply_move_to_coord(self.corners, CoordinateType::CornerState, turn);
+        self.edges_within_faces = move_tables.apply_move_to_coord(self.edges_within_faces, CoordinateType::EdgeInFace, turn);
+        self.edges_across_faces = move_tables.apply_move_to_coord(self.edges_across_faces, CoordinateType::EdgeAcrossFaces, turn);
+        self.up_centres = move_tables.apply_move_to_coord(self.up_centres, CoordinateType::UpCentre, turn);
+        self.down_centres = move_tables.apply_move_to_coord(self.down_centres, CoordinateType::DownCentre, turn);
     }
 
     pub fn to_raw(&self) -> RawState {
@@ -248,7 +248,7 @@ impl CoordState {
     }
 
     fn get_corner_permutation(&self) -> Vec<u8> {
-        let mut corner_permutation = Coordinate::CornerState.coord_to_state(self.corners);
+        let mut corner_permutation = CoordinateType::CornerState.coord_to_state(self.corners);
         for i in 0..corner_permutation.len() {
             corner_permutation[i] /= 2;        
         }
@@ -270,8 +270,8 @@ impl CoordState {
     }
 
     fn get_edges(&self) -> Vec<u8> {
-        let mut state = Coordinate::EdgeInFace.coord_to_state(self.edges_within_faces);
-        let across_face = Coordinate::EdgeAcrossFaces.coord_to_state(self.edges_across_faces);
+        let mut state = CoordinateType::EdgeInFace.coord_to_state(self.edges_within_faces);
+        let across_face = CoordinateType::EdgeAcrossFaces.coord_to_state(self.edges_across_faces);
         for i in 0..state.len() {
             state[i] += across_face[i];
         }
@@ -279,13 +279,14 @@ impl CoordState {
     }
 
     fn get_up_centres(&self) -> Vec<u8> {
-        Coordinate::UpCentre.coord_to_state(self.up_centres)
+        CoordinateType::UpCentre.coord_to_state(self.up_centres)
     }
     
     fn get_down_centres(&self) -> Vec<u8> {
-        Coordinate::DownCentre.coord_to_state(self.down_centres)
+        CoordinateType::DownCentre.coord_to_state(self.down_centres)
     }
 }
+
 
 pub fn do_triple_centres_match_corners(corners: u32, down_centres: u32) -> bool {
     SOLVED_CENTRES[corners as usize] == down_centres

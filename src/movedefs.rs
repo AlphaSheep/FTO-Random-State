@@ -24,9 +24,13 @@
 use std::fmt;
 use std::borrow::Cow;
 
+pub const NUM_FACES: usize = 8;
+
 pub const NUM_CORNERS: usize = 6;
 pub const NUM_EDGES: usize = 12;
 pub const NUM_CENTRES: usize = 12;
+
+
 
 
 const RAW_TURN_U: RawTurn = RawTurn { 
@@ -160,7 +164,7 @@ impl Face {
         [Self::U, Self::F, Self::BL, Self::BR, Self::L, Self::R, Self::B, Self::D]       
     }
 
-    pub fn turn(self) -> &'static RawTurn {
+    pub fn get_raw_turn(self) -> &'static RawTurn {
         RawTurn::get(self)
     }
 
@@ -177,7 +181,7 @@ impl Face {
         }
     }
 
-    pub fn to_byte(&self) -> u8 {
+    pub fn to_byte(self) -> u8 {
         match self {
             Self::U => b'U',
             Self::F => b'F',
@@ -201,6 +205,33 @@ impl Face {
             b'B' => Self::B,
             b'D' => Self::D,
             _ => panic!("Unrecognised byte")
+        }
+    }
+
+    pub fn to_index(self) -> usize {
+        match self {
+            Self::U => 0,
+            Self::F => 1,
+            Self::BL => 2,
+            Self::BR => 3,
+            Self::L => 4,
+            Self::R => 5,
+            Self::B => 6,
+            Self::D => 7,
+        }
+    }
+
+    pub fn from_index(value: usize) -> Self {
+        match value {
+            0 => Self::U,
+            1 => Self::F,
+            2 => Self::BL,
+            3 => Self::BR,
+            4 => Self::L,
+            5 => Self::R,
+            6 => Self::B,
+            7 => Self::D,
+            _ => panic!("Unrecognised index")
         }
     }
 }
@@ -284,6 +315,10 @@ impl Turn {
     pub fn get_up_turns() -> Vec<Self> {
         Self::get_allowed_turns_for_faces(&Face::get_up_faces())
     }
+
+    pub fn get_down_turns() -> Vec<Self> {
+        Self::get_allowed_turns_for_faces(&Face::get_down_faces())
+    }
 }
 
 impl fmt::Debug for Turn {
@@ -337,14 +372,14 @@ mod tests {
 
     #[test]
     fn test_get_single_turn_for_face() {
-        assert_eq!(Face::U.turn(), &RAW_TURN_U);
-        assert_eq!(Face::F.turn(), &RAW_TURN_F);
-        assert_eq!(Face::R.turn(), &RAW_TURN_R);
-        assert_eq!(Face::L.turn(), &RAW_TURN_L);
-        assert_eq!(Face::B.turn(), &RAW_TURN_B);
-        assert_eq!(Face::D.turn(), &RAW_TURN_D);
-        assert_eq!(Face::BR.turn(), &RAW_TURN_BR);
-        assert_eq!(Face::BL.turn(), &RAW_TURN_BL);
+        assert_eq!(Face::U.get_raw_turn(), &RAW_TURN_U);
+        assert_eq!(Face::F.get_raw_turn(), &RAW_TURN_F);
+        assert_eq!(Face::R.get_raw_turn(), &RAW_TURN_R);
+        assert_eq!(Face::L.get_raw_turn(), &RAW_TURN_L);
+        assert_eq!(Face::B.get_raw_turn(), &RAW_TURN_B);
+        assert_eq!(Face::D.get_raw_turn(), &RAW_TURN_D);
+        assert_eq!(Face::BR.get_raw_turn(), &RAW_TURN_BR);
+        assert_eq!(Face::BL.get_raw_turn(), &RAW_TURN_BL);
     }
 
     #[test]

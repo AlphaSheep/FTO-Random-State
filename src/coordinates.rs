@@ -17,11 +17,11 @@ const CORNER_MAIN_TRIPLE_CENTRE: [usize; NUM_CORNERS] = [6, 0, 3, 11, 10, 9];
 const CORNER_FLIPPED_TRIPLE_CENTRE: [usize; NUM_CORNERS] = [1, 4, 7, 2, 5, 8];
 
 lazy_static! {
-    static ref BINOMIAL_TABLE: [[u64; 13]; 13] = precompute_binomial_table();
+    static ref BINOMIAL_TABLE: [[u32; 13]; 13] = precompute_binomial_table();
 }
 
 
-fn precompute_binomial_table() -> [[u64; 13]; 13] {
+fn precompute_binomial_table() -> [[u32; 13]; 13] {
     let mut binomial_table = [[0; 13]; 13];
     for n in 0..=12 {
         binomial_table[n][0] = 1;
@@ -33,7 +33,7 @@ fn precompute_binomial_table() -> [[u64; 13]; 13] {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Coordinate {
+pub enum CoordinateType {
     CornerState,
     EdgeInFace,
     EdgeAcrossFaces,
@@ -42,7 +42,7 @@ pub enum Coordinate {
     TripleCentre,
 }
 
-impl Coordinate {
+impl CoordinateType {
     pub fn iter() -> impl Iterator<Item = Self> {
         [
             Self::CornerState,
@@ -97,7 +97,7 @@ impl Coordinate {
         }
     }
 
-    pub fn to_byte(&self) -> u8 {
+    pub fn to_byte(self) -> u8 {
         match self {
             Self::CornerState => b'C',
             Self::EdgeInFace => b'E',
@@ -233,8 +233,8 @@ fn invert_coord_to_face_positions(coord: u32) -> [u8; NUM_CENTRES] {
 }
 
 pub fn get_down_centre_coord_for_matched_triples(corner_coord: u32) -> u32 {
-    let triple_centres = Coordinate::TripleCentre.coord_to_state(0);
-    let corner_state = Coordinate::CornerState.coord_to_state(corner_coord);
+    let triple_centres = CoordinateType::TripleCentre.coord_to_state(0);
+    let corner_state = CoordinateType::CornerState.coord_to_state(corner_coord);
     
     let mut down_centres = triple_centres.clone();
 
@@ -298,25 +298,32 @@ fn invert_coord_to_sub_permutation<const N: usize>(coord: u32) -> [u8; NUM_CENTR
     state
 }
 
+#[allow(clippy::comparison_chain)]
 fn sub_permutation_coord(positions: &[u8], num_groups: u32, num_per_group: u32) -> u32 {
-    let mut coord: u32 = 0;    
+    let mut coord: u32 = 0;
+    let num_per_group_u8 = num_per_group as u8;
+    
     for i in (0..num_groups).rev() {
-        let face = num_per_group * (i+1);
-        let mut n = -1;
-        let mut k = -1;
+        let face = num_per_group_u8 * (i as u8 +1);
+        let mut n: usize = 0;
+        let mut k: usize = 0;
         for position in positions {
-            let piece = (position / num_per_group as u8) * num_per_group as u8;
-            n += (piece <= (face as u8)) as i32;
-            k += (piece == (face as u8)) as i32;
-            if  (n >= 0) && (k >= 0) && (piece <= (face as u8)) && (piece != (face as u8)) {
-                coord += BINOMIAL_TABLE[n as usize][k as usize] as u32;
+            let piece = (position / num_per_group_u8) * num_per_group_u8;
+            if piece == face {
+                k += 1;
+                n += 1;
+            } else if piece < face {
+                n += 1;
+                if (n >= 1) && (k >= 1) {
+                    coord += BINOMIAL_TABLE[n-1][k-1];
+                }
             }
         }
-        let mut multiplier: u32 = face;
+        let mut multiplier: u32 = face as u32;
         let mut divider: u32 = 1;
         for j in 1..num_per_group {
-            multiplier *= face - j;
-            divider *= (j+1);
+            multiplier *= face as u32 - j;
+            divider *= j + 1;
         }        
         coord *= multiplier / divider;
     }
@@ -399,7 +406,7 @@ mod tests {
     #[test_case(&[8,10,6,4,2,0], 359)]
     #[test_case(&[9,11,7,5,3,1], 11_519)]
     fn test_full_corner_state_to_coord(state: &[u8], value: u32) {
-        let coord = Coordinate::CornerState;
+        let coord = CoordinateType::CornerState;
         assert_eq!(coord.state_to_coord(state), value);
     }
 
@@ -407,7 +414,7 @@ mod tests {
     #[test_case(&[1,0,3,2,4,5,6,7,8,9,10,11], 1)]
     #[test_case(&[11,10,9,8,7,6,5,4,3,2,1,0], 369_599)]
     fn test_edge_to_face_coord(state: &[u8], value: u32) {
-        let coord = Coordinate::EdgeInFace;
+        let coord = CoordinateType::EdgeInFace;
         assert_eq!(coord.state_to_coord(state), value);
     }
 
@@ -415,7 +422,7 @@ mod tests {
     #[test_case(&[9,0,2,3,4,5,6,7,8,1,10,11], 1)]
     #[test_case(&[11,10,9,8,7,6,5,4,3,2,1,0], 34_649)]
     fn test_edge_to_across_face_coord(state: &[u8], value: u32) {
-        let coord = Coordinate::EdgeAcrossFaces;
+        let coord = CoordinateType::EdgeAcrossFaces;
         assert_eq!(coord.state_to_coord(state), value);
     }
 
@@ -423,7 +430,7 @@ mod tests {
     #[test_case(&[1,0,3,2,4,5,6,7,8,9,10,11], 1)]
     #[test_case(&[11,10,9,8,7,6,5,4,3,2,1,0], 369_599)]
     fn test_up_centers_to_coord(state: &[u8], value: u32) {
-        let coord = Coordinate::UpCentre;
+        let coord = CoordinateType::UpCentre;
         assert_eq!(coord.state_to_coord(state), value);
     }
 
@@ -431,7 +438,7 @@ mod tests {
     #[test_case(&[1,0,3,2,4,5,6,7,8,9,10,11], 1)]
     #[test_case(&[11,10,9,8,7,6,5,4,3,2,1,0], 369_599)]
     fn test_down_centers_to_coord(state: &[u8], value: u32) {
-        let coord = Coordinate::DownCentre;
+        let coord = CoordinateType::DownCentre;
         assert_eq!(coord.state_to_coord(state), value);
     }
 
@@ -439,7 +446,7 @@ mod tests {
     #[test_case(&[1,0,3,2,4,5,6,7,8,9,10,11], 1)]
     #[test_case(&[11,10,9,8,7,6,5,4,3,2,1,0], 369_599)]
     fn test_triple_centers_to_coord(state: &[u8], value: u32) {
-        let coord = Coordinate::TripleCentre;
+        let coord = CoordinateType::TripleCentre;
         assert_eq!(coord.state_to_coord(state), value);
     }
 
@@ -453,7 +460,7 @@ mod tests {
     #[test_case(&[8,10,6,4,2,0], 359)]
     #[test_case(&[9,11,7,5,3,1], 11_519)]
     fn test_invert_full_corner_coord(state: &[u8], value: u32) {
-        let coord = Coordinate::CornerState;
+        let coord = CoordinateType::CornerState;
         assert_eq!(coord.coord_to_state(value), state);
     }
 
@@ -461,7 +468,7 @@ mod tests {
     #[test_case(&[0,0,3,0,3,3,6,6,6,9,9,9], 1)]
     #[test_case(&[9,9,9,6,6,6,3,3,3,0,0,0], 369_599)]
     fn test_invert_edge_face_coord(state: &[u8], value: u32) {
-        let coord = Coordinate::EdgeInFace;
+        let coord = CoordinateType::EdgeInFace;
         assert_eq!(coord.coord_to_state(value), state);
     }
 
@@ -469,7 +476,7 @@ mod tests {
     #[test_case(&[0,0,2,0,1,2,0,1,2,1,1,2], 1)]
     #[test_case(&[2,1,0,2,1,0,2,1,0,2,1,0], 34_649)]
     fn test_invert_edge_across_face_coord(state: &[u8], value: u32) {
-        let coord = Coordinate::EdgeAcrossFaces;
+        let coord = CoordinateType::EdgeAcrossFaces;
         assert_eq!(coord.coord_to_state(value), state);
     }
     
@@ -477,7 +484,7 @@ mod tests {
     #[test_case(&[0,0,3,0,3,3,6,6,6,9,9,9], 1)]
     #[test_case(&[9,9,9,6,6,6,3,3,3,0,0,0], 369_599)]
     fn test_invert_up_centers_coord(state: &[u8], value: u32) {
-        let coord = Coordinate::UpCentre;
+        let coord = CoordinateType::UpCentre;
         assert_eq!(coord.coord_to_state(value), state);
     }
 
@@ -485,7 +492,7 @@ mod tests {
     #[test_case(&[0,0,3,0,3,3,6,6,6,9,9,9], 1)]
     #[test_case(&[9,9,9,6,6,6,3,3,3,0,0,0], 369_599)]
     fn test_invert_down_centers_coord(state: &[u8], value: u32) {
-        let coord = Coordinate::DownCentre;
+        let coord = CoordinateType::DownCentre;
         assert_eq!(coord.coord_to_state(value), state);
     }
 
@@ -493,7 +500,7 @@ mod tests {
     #[test_case(&[0,0,3,0,3,3,6,6,6,9,9,9], 1)]
     #[test_case(&[9,9,9,6,6,6,3,3,3,0,0,0], 369_599)]
     fn test_invert_triple_centers_coord(state: &[u8], value: u32) {
-        let coord = Coordinate::TripleCentre;
+        let coord = CoordinateType::TripleCentre;
         assert_eq!(coord.coord_to_state(value), state);
     }
     
@@ -549,6 +556,15 @@ mod tests {
         assert_eq!(invert_coord_to_face_positions(coord), expected);
     }
 
+    #[test]
+    fn test_invert_coord_to_face_positions_all() {
+        for coord in 0..NUM_FACE_PIECE_PERMS as u32 {
+            if coord % 1680 == 0 {
+                println!("{} -> {:?}", coord, invert_coord_to_face_positions(coord));
+            }
+        }
+    }
+
     #[test_case(&[0,1,2,3,4,5,6,7,8,9,10,11], 0)]
     #[test_case(&[3,1,2,6,4,5,0,7,8,9,10,11], 0)]
     #[test_case(&[9,0,2,3,4,5,6,7,8,1,10,11], 1)]
@@ -594,9 +610,9 @@ mod tests {
     #[test]
     fn test_coordinate_to_and_from_byte() {
         let mut seen_bytes = Vec::new();
-        for coord_type in Coordinate::iter() {
+        for coord_type in CoordinateType::iter() {
             let byte = coord_type.to_byte();
-            let converted_coord_type = Coordinate::from_byte(byte);
+            let converted_coord_type = CoordinateType::from_byte(byte);
             
             assert_eq!(coord_type, converted_coord_type);
             
