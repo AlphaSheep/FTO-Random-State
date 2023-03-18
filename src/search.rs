@@ -36,9 +36,9 @@ fn is_redundant_turn(prev_turn: Option<&Turn>, curr_turn: &Turn) -> bool {
         Some(prev_turn) => {
             let prev_axis = prev_turn.face.get_primary_face();
             let curr_axis = curr_turn.face.get_primary_face();
-            
+
             // Don't turn the same face twice
-            prev_turn.face == curr_turn.face || 
+            prev_turn.face == curr_turn.face ||
             // Skip if it is the same axis, and the current face is primary (favour the secondary face in phase 1)
             (prev_axis == curr_axis && curr_turn.face == curr_axis)
         },
@@ -55,7 +55,7 @@ fn should_prune_phase_1(state: &CoordState, pruning_tables: &SimplePruningTable,
 }
 
 fn is_phase_1_solved(state: &CoordState) -> bool {
-    state.edges_within_faces == 0 && 
-    state.up_centres == 0 && 
-    do_triple_centres_match_corners(state.corners, state.down_centres) 
+    state.edges_within_faces == 0 &&
+    state.up_centres == 0 &&
+    do_triple_centres_match_corners(state.corners, state.down_centres)
 }

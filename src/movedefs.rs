@@ -1,10 +1,10 @@
 /*
     Moves:
-    The effect of a move on permutation is defined using a vector of indices. The index in position n means that piece in position n moves 
-    to that index. For example, if the move vector for corner permutation is [1, 2, 0, 3, 4, 5], then the corner in the UBL position moves to 
+    The effect of a move on permutation is defined using a vector of indices. The index in position n means that piece in position n moves
+    to that index. For example, if the move vector for corner permutation is [1, 2, 0, 3, 4, 5], then the corner in the UBL position moves to
     the UBR position, the corner in the UBR postion moves to UF, and the corner in UF moves to UBL. The D corners do not move.
 
-    The effect of a move on orientation is defined as a vector of booleans. Orientation is applied after permutation, and each element of 
+    The effect of a move on orientation is defined as a vector of booleans. Orientation is applied after permutation, and each element of
     the vector indicates whether or not the piece that arrives in that position is flipped relative to it's starting orientation.
 */
 
@@ -16,10 +16,10 @@
 //      UB  UR  UL  BLB  BLL  BLD  BRR  BRB  BRD  FL  FR  FD
 // Up centres:
 //      0    1    2   3    4    5     6    7     8    9   10   11
-//      UBL  UBR  UF  BLU  BLF  BLBR  BRU  BRBL  BRF  FU  FBR  FBL 
+//      UBL  UBR  UF  BLU  BLF  BLBR  BRU  BRBL  BRF  FU  FBR  FBL
 // Down Centres:
 //      0   1   2   3   4   5   6   7   8   9   10  11
-//      BR  BL  BD  RL  RB  RD  LB  LR  LD  DL  DR  DB   
+//      BR  BL  BD  RL  RB  RD  LB  LR  LD  DL  DR  DB
 
 use std::fmt;
 use std::borrow::Cow;
@@ -33,7 +33,7 @@ pub const NUM_CENTRES: usize = 12;
 
 
 
-const RAW_TURN_U: RawTurn = RawTurn { 
+const RAW_TURN_U: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [2,0,1,3,4,5],
     corner_orientation: [0b000000],
@@ -41,8 +41,8 @@ const RAW_TURN_U: RawTurn = RawTurn {
     up_centres: [2,0,1,3,4,5,6,7,8,9,10,11],
     down_centres: [6,7,2,0,1,5,3,4,8,9,10,11],
     triple_centres: [0,1,2,3,4,5,6,7,8,9,10,11],
-};   
-const RAW_TURN_F: RawTurn = RawTurn { 
+};
+const RAW_TURN_F: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [0,1,5,3,2,4],
     corner_orientation: [0b001001],
@@ -51,7 +51,7 @@ const RAW_TURN_F: RawTurn = RawTurn {
     down_centres: [0,1,2,8,4,7,6,9,10,5,3,11],
     triple_centres: [0,1,2,3,4,5,6,7,8,9,10,11],
 };
-const RAW_TURN_BL: RawTurn = RawTurn { 
+const RAW_TURN_BL: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [3,1,2,5,4,0],
     corner_orientation: [0b100100],
@@ -72,7 +72,7 @@ const RAW_TURN_BR: RawTurn = RawTurn {
 
 // Down Centres:
 //      0   1   2   3   4   5   6   7   8   9   10  11
-//      BR  BL  BD  RL  RB  RD  LB  LR  LD  DL  DR  DB   
+//      BR  BL  BD  RL  RB  RD  LB  LR  LD  DL  DR  DB
 const RAW_TURN_L: RawTurn = RawTurn {
     corner_full_state: [0; 7],
     corner_permutation: [5,1,0,3,4,2],
@@ -161,7 +161,7 @@ impl Face {
     }
 
     pub fn get_all_faces() -> [Self; 8] {
-        [Self::U, Self::F, Self::BL, Self::BR, Self::L, Self::R, Self::B, Self::D]       
+        [Self::U, Self::F, Self::BL, Self::BR, Self::L, Self::R, Self::B, Self::D]
     }
 
     pub fn get_raw_turn(self) -> &'static RawTurn {
@@ -280,11 +280,11 @@ impl RawTurn {
     pub fn get_effect(&self, effect_type: TurnEffectType) -> Cow<[u8]> {
         match effect_type {
             TurnEffectType::Corner => self.get_corner_full_state(),
-            TurnEffectType::CornerPermutation => Cow::Borrowed(&self.corner_permutation), 
-            TurnEffectType::CornerOrientation => Cow::Borrowed(&self.corner_orientation), 
-            TurnEffectType::EdgeInFace => Cow::Borrowed(&self.edges), 
-            TurnEffectType::EdgeAcrossFaces => Cow::Borrowed(&self.edges), 
-            TurnEffectType::UpCentre => Cow::Borrowed(&self.up_centres), 
+            TurnEffectType::CornerPermutation => Cow::Borrowed(&self.corner_permutation),
+            TurnEffectType::CornerOrientation => Cow::Borrowed(&self.corner_orientation),
+            TurnEffectType::EdgeInFace => Cow::Borrowed(&self.edges),
+            TurnEffectType::EdgeAcrossFaces => Cow::Borrowed(&self.edges),
+            TurnEffectType::UpCentre => Cow::Borrowed(&self.up_centres),
             TurnEffectType::DownCentre => Cow::Borrowed(&self.down_centres),
             TurnEffectType::TripleCentre => Cow::Borrowed(&self.triple_centres),
         }
@@ -294,7 +294,7 @@ impl RawTurn {
 impl Turn {
     pub fn new(face: Face, invert: bool) -> Self {
         Self {
-            face, 
+            face,
             invert,
          }
     }
@@ -458,8 +458,8 @@ mod tests {
         for face in Face::get_all_faces() {
             let byte = face.to_byte();
             let converted_face = Face::from_byte(byte);
-            
-            assert_eq!(face, converted_face);            
+
+            assert_eq!(face, converted_face);
             for seen in &seen_bytes {
                 assert_ne!(*seen, byte);
             }

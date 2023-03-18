@@ -1,26 +1,26 @@
 /*
     PIECE DEFINITIONS:
-    The orientation and face moves match those used in Ben Streeter's document: 
+    The orientation and face moves match those used in Ben Streeter's document:
     https://docs.google.com/document/d/e/2PACX-1vTDL7-XvpNrhIc2Q_1nHfeJyG7tIazgBCq88PE8ahqIbvPb3LPQsM3_vsdqX6y8sxte1n5jGk2J3c5V/pub
-    The puzzle is oriented with one face flat on the table, with the triangle pointing away from you. This is labelled the D face. 
+    The puzzle is oriented with one face flat on the table, with the triangle pointing away from you. This is labelled the D face.
     The other horizontal face points toward you and is labelled the U face. There are four visible faces, clockwise U, R, F, and L.
     The other faces are D opposite U, B opposite F, BL opposite R, and BR opposite L.
     The eight possible moves are clockwise turns of corresponding faces.
 
     Corner permutation:
-    NOTE: We make a distinction between up corners (corners which have a sticker belonging on the U face) and down corners (with a sticker 
-    belonging on the D face) for conveinience, although mechanically these corners are interchangable and are not technically different 
-    piece types. This allows us to label corners with two faces - either U or D, and the face of the sticker that can be interchanged 
+    NOTE: We make a distinction between up corners (corners which have a sticker belonging on the U face) and down corners (with a sticker
+    belonging on the D face) for conveinience, although mechanically these corners are interchangable and are not technically different
+    piece types. This allows us to label corners with two faces - either U or D, and the face of the sticker that can be interchanged
     with either U or D. This has advantages for defining orientation.
 
     We assign an ordering to the corners as follows:
          0    1    2   3   4   5
          UBL  UBR  UF  DB  DR  DL
     Note that the permutation coordinate only needs to encode the position of 4 corners as the remaining two can be deduced as the corners
-    must always have even parity.    
+    must always have even parity.
 
     There are 6!/2 = 360 possible corner permutations.
-    
+
     Corner Orientation:
     Corner orientation is defined differently for up corners and down corners.
         - Up corners on the U face: Oriented if the U sticker points up.
@@ -31,7 +31,7 @@
     There are (2^6)/2 = 32 possible combinations of corner orientation.
 
     Edge permutation:
-    We label edges with the two faces that the stickers belong to, preferring to use the up face first. Since there is no orientation of edges, 
+    We label edges with the two faces that the stickers belong to, preferring to use the up face first. Since there is no orientation of edges,
     we only need to track permutation.
 
     We assign an ordering to the edges as follows:
@@ -42,13 +42,13 @@
     There are 12!/2  = 239_500_800 edge possible edge permutations.
 
     Centre permutation:
-    We distinguish between two centre types: up centres (that can be move to the U face) and down centres (which can be moved to the D face). 
-    Unlike corners, these are mechanically two different piece types, and cannot be interchanged. They are also not unique. There are 12 centres 
-    of each type, grouped in four sets of three. We label centres with just the face that they belong on, noting that this is not a unique label 
-    (all three centres that belong on a face are interchangable have the same label). We label all possible positions uniquely, however, using 
+    We distinguish between two centre types: up centres (that can be move to the U face) and down centres (which can be moved to the D face).
+    Unlike corners, these are mechanically two different piece types, and cannot be interchanged. They are also not unique. There are 12 centres
+    of each type, grouped in four sets of three. We label centres with just the face that they belong on, noting that this is not a unique label
+    (all three centres that belong on a face are interchangable have the same label). We label all possible positions uniquely, however, using
     two faces, the first being the face on which the centre is, and the second being the opposite face on the corner that the centre is touching.
     See the labels and ordering below if this is confusing.
-    
+
     We assign a number based on the face where these pieces belong:
     Up centres:
         0  1   2   3
@@ -56,35 +56,35 @@
     Down centres:
         0  1  2  3
         B  R  L  D
-    We assign an ordering for postions: 
+    We assign an ordering for postions:
     Up centres:
         0    1    2   3    4    5     6    7     8    9   10   11
-        UBL  UBR  UF  BLU  BLF  BLBR  BRU  BRBL  BRF  FU  FBR  FBL 
+        UBL  UBR  UF  BLU  BLF  BLBR  BRU  BRBL  BRF  FU  FBR  FBL
     Down centres:
         0   1   2   3   4   5   6   7   8   9   10  11
-        BR  BL  BD  RL  RB  RD  LB  LR  LD  DL  DR  DB   
+        BR  BL  BD  RL  RB  RD  LB  LR  LD  DL  DR  DB
 
     There are 12!/(3!^4) = 369_600 permutations for up centers, and the same number for down centres.
 
     Additional piece types:
     Hex edge permutation:
-    We define a hex as three edges and three up centres arranged to form a hexagon. Hexes are special as they are not broken by 
-    up face turns. There are four hexes that may be formed. Every edge is part of a hex, and we define the hex edge permutation 
+    We define a hex as three edges and three up centres arranged to form a hexagon. Hexes are special as they are not broken by
+    up face turns. There are four hexes that may be formed. Every edge is part of a hex, and we define the hex edge permutation
     identically to the up centre permutation, that is, by treating all three edges with the same up face as if they were interchangable.
 
     Hex orientation:
     Hex orientation is only meaningful when the hex edge permutation is correctly ordered.
 
-    We define the hex orientation of hex n is defined as (p[3n+1] - p[3n]) mod 3, where p[i] is the full edge permutation 
-    (note: not hex edge permutation) of edge i, and n is 0, 1, 2, or 3. A hex orientation of 0 is not possible if the hex is 
+    We define the hex orientation of hex n is defined as (p[3n+1] - p[3n]) mod 3, where p[i] is the full edge permutation
+    (note: not hex edge permutation) of edge i, and n is 0, 1, 2, or 3. A hex orientation of 0 is not possible if the hex is
     formed from a single colour, so hex orientation can only take a value of 1 or 2. If a hex orientation is 1, then full edge
-    permutation may be solved with at most a single turn of each up face, and no down face turns. If the hex orientation is 2, 
+    permutation may be solved with at most a single turn of each up face, and no down face turns. If the hex orientation is 2,
     then solving edge permutation requires multiple down face turns.
 
     Triple centre permutation:
     We define a triple as a corner and the two down centres touching it. As with hexes, triples are not affected by up face turns.
-    The triple centre permutation is defined similarly to the down centre permutation, except the order is not fixed, but follows 
-    corners as they move. This means that a single turn of a down face will only affect the permutation of triple centres that are not 
+    The triple centre permutation is defined similarly to the down centre permutation, except the order is not fixed, but follows
+    corners as they move. This means that a single turn of a down face will only affect the permutation of triple centres that are not
     physically moved by the turn, as the corner that those centres were attached to moves.
 */
 
@@ -121,10 +121,10 @@ pub struct CoordState {
 impl RawState {
     pub fn new(corners: &[u8], corner_orientation: u8, edges: &[u8], up_centres: &[u8], down_centres: &[u8]) -> Self {
         Self {
-            corners: corners.try_into().unwrap(), 
-            corner_orientation, 
-            edges: edges.try_into().unwrap(), 
-            up_centres: up_centres.try_into().unwrap(), 
+            corners: corners.try_into().unwrap(),
+            corner_orientation,
+            edges: edges.try_into().unwrap(),
+            up_centres: up_centres.try_into().unwrap(),
             down_centres: down_centres.try_into().unwrap(),
         }
     }
@@ -153,7 +153,7 @@ impl RawState {
         apply_raw_permutation(&mut self.edges, &m.edges);
         apply_raw_permutation(&mut self.up_centres, &m.up_centres);
         apply_raw_permutation(&mut self.down_centres, &m.down_centres);
-        
+
         if turn.invert {
             self.apply(&Turn::new(turn.face, false));
         }
@@ -176,7 +176,7 @@ impl RawState {
         for i in (1..NUM_CORNERS).rev() {
             let flip = orientation % 2;
             orientation /= 2;
-            
+
             first_flip ^= flip;
             state[i] = state[i]*2 + flip;
         }
@@ -250,14 +250,14 @@ impl CoordState {
     fn get_corner_permutation(&self) -> Vec<u8> {
         let mut corner_permutation = CoordinateType::CornerState.coord_to_state(self.corners);
         for i in 0..corner_permutation.len() {
-            corner_permutation[i] /= 2;        
+            corner_permutation[i] /= 2;
         }
         corner_permutation
-    } 
+    }
 
     fn get_corner_orientation(&self) -> u8 {
         let mut orientation = (self.corners / 360) as u8;
-        // This is the orientation of the last 5 corners. We need to calculate whether the remaining corner 
+        // This is the orientation of the last 5 corners. We need to calculate whether the remaining corner
         // needs to be flipped.
         let mut temp = orientation;
         let mut first_flip: u8 = 0;
@@ -281,7 +281,7 @@ impl CoordState {
     fn get_up_centres(&self) -> Vec<u8> {
         CoordinateType::UpCentre.coord_to_state(self.up_centres)
     }
-    
+
     fn get_down_centres(&self) -> Vec<u8> {
         CoordinateType::DownCentre.coord_to_state(self.down_centres)
     }
@@ -292,11 +292,11 @@ pub fn do_triple_centres_match_corners(corners: u32, down_centres: u32) -> bool 
     SOLVED_CENTRES[corners as usize] == down_centres
 }
 
-pub fn apply_raw_permutation<T>(state: &mut [T], effect: &[u8]) 
+pub fn apply_raw_permutation<T>(state: &mut [T], effect: &[u8])
 where T: Copy + Clone
 {
     let orig_state: Vec<T> = state.to_vec();
-    
+
     for i in 0..effect.len() {
         state[i] = orig_state[effect[i] as usize];
     }
@@ -431,7 +431,7 @@ mod tests {
         let mut expected = CoordState::solved();
         assert_eq!(coord_state, expected);
 
-        raw_state.corner_orientation = 33;     
+        raw_state.corner_orientation = 33;
         coord_state = raw_state.to_coords();
         expected.corners = 360;
 
@@ -441,7 +441,7 @@ mod tests {
     #[test]
     fn test_apply_move() {
         let mut state = RawState::solved();
-        
+
         state.apply(&Turn::new(Face::U, false));
 
         let expected = RawState::new(
@@ -458,7 +458,7 @@ mod tests {
     #[test]
     fn test_apply_move_sequence() {
         let mut state = RawState::solved();
-        
+
         state.apply_sequence(&[
             &Turn::new(Face::U, true),
             &Turn::new(Face::U, true)

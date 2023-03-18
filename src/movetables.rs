@@ -11,7 +11,7 @@ const MOVE_TABLE_FILE: &str = "./movetables.dat";
 
 
 pub trait ApplyMove {
-    fn apply_move_to_coord(&self, coord: u32, coord_type: CoordinateType, turn: &Turn) -> u32; 
+    fn apply_move_to_coord(&self, coord: u32, coord_type: CoordinateType, turn: &Turn) -> u32;
 }
 
 pub trait SubTables {
@@ -70,19 +70,19 @@ impl MoveTables {
             writer.write_all(&[0,0,0,0])
                 .expect("End of table should be written");
         }
-        
+
         writer.write_all(&[0,0,0,0])
         .expect("End of move_table file should be written");
     }
-    
-    fn load(file: File) -> Self {        
+
+    fn load(file: File) -> Self {
         let mut reader = BufReader::new(file);
 
         let mut result = Self { tables: HashMap::new() };
 
         loop {
             let coord_byte = read_next_num(&mut reader) as u8;
-            
+
             if coord_byte == 0 {
                 break
             }
@@ -112,8 +112,8 @@ impl MoveTable {
 
             coord_type,
 
-            table: [empty_vec; NUM_FACES],        
-            inverse_table: [empty_vec; NUM_FACES], 
+            table: [empty_vec; NUM_FACES],
+            inverse_table: [empty_vec; NUM_FACES],
         }
     }
 
@@ -145,7 +145,7 @@ impl MoveTable {
                 }
 
                 let turn = RawTurn::get(face);
-                
+
                 let mut cycle = [start_coord, 0, 0];
 
                 apply_turn_to_state(&mut state, turn, coord_type.get_turn_effect_type());
@@ -188,7 +188,7 @@ impl MoveTable {
             if face_byte == 0 {
                 break
             }
-            let face = Face::from_byte(face_byte);            
+            let face = Face::from_byte(face_byte);
 
             let table = &mut result.table[face.to_index()];
             let inv_table = &mut result.inverse_table[face.to_index()];
@@ -270,7 +270,7 @@ mod tests {
     fn test_move_tables() {
         // Because generating the table is slow, we do it once then do all the checks we need to
         // We choose corner state because it needs the shortest time to generate
-        let coord_type = CoordinateType::CornerState; 
+        let coord_type = CoordinateType::CornerState;
         let move_table = MoveTable::new(coord_type);
 
         let start_coord: u32 = 0;

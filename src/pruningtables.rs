@@ -37,7 +37,7 @@ impl SimplePruningTable {
     }
 
     pub fn populate(&mut self, move_tables: &MoveTables) {
-        
+
         for coord_type in CoordinateType::iter() {
             let move_table = move_tables.tables.get(&coord_type).unwrap();
             self.populate_coordinate(move_table, coord_type);
@@ -60,7 +60,7 @@ impl SimplePruningTable {
 
         self.forward_fill_table(&mut table, move_table, &mut distance, &mut remaining, forward_stop_point);
         self.backward_fill_table(&mut table, move_table, &mut distance, &mut remaining);
-        
+
         // println!("{:?} pruning table max depth = {:?}", coord_type, distance-1);
 
         self.tables.insert(coord_type, table);
@@ -70,7 +70,7 @@ impl SimplePruningTable {
         let mut previous_fill_list: Vec<usize> = vec![0];
         let allowed_turns = self.get_allowed_turns();
         while *remaining > 0 && previous_fill_list.len() < forward_stop_point {
-            // println!("  - Forward filling {:?} pruning table for distance {:?}. Checking {:?} coords. ({:?} remaining)", 
+            // println!("  - Forward filling {:?} pruning table for distance {:?}. Checking {:?} coords. ({:?} remaining)",
             //     move_table.coord_type, distance, previous_fill_list.len(), remaining);
             let mut next_fill_list: Vec<usize> = vec![];
             for coord in previous_fill_list {
@@ -84,18 +84,18 @@ impl SimplePruningTable {
                 }
             }
             previous_fill_list = next_fill_list;
-            *distance += 1;                
+            *distance += 1;
         }
     }
 
     fn backward_fill_table(&self, table: &mut Vec<u8>, move_table: &MoveTable, distance: &mut u8, remaining: &mut usize) {
         let allowed_turns = self.get_allowed_turns();
         while *remaining > 0 {
-            // println!("  - Backward filling {:?} pruning table for distance {:?}. Checking {:?} coords. ({:?} remaining)", 
+            // println!("  - Backward filling {:?} pruning table for distance {:?}. Checking {:?} coords. ({:?} remaining)",
             //     move_table.coord_type, distance, remaining, remaining);
 
             let num_coords = move_table.coord_type.get_size();
-            
+
             for coord in 0..num_coords {
                 if table[coord] == u8::MAX {
                     for turn in &allowed_turns {
@@ -143,7 +143,7 @@ mod tests {
 
     #[test]
     fn test_pruning_tables() {
-        let coord_type = CoordinateType::CornerState; 
+        let coord_type = CoordinateType::CornerState;
         let move_table = MoveTable::new(coord_type);
 
         let mut pruning_table = SimplePruningTable::init(&Face::get_up_faces());

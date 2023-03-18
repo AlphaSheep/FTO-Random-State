@@ -109,7 +109,7 @@ impl CoordinateType {
     }
 
     pub fn from_byte(byte: u8) -> Self {
-        match byte {          
+        match byte {
             b'C' => Self::CornerState,
             b'E' => Self::EdgeInFace,
             b'A' => Self::EdgeAcrossFaces,
@@ -124,16 +124,16 @@ impl CoordinateType {
 /// Converts a permutation of up to 12 pieces into a single 32-bit coordinate.
 /// First we encode the number of elements after the nth element that belong before it.
 /// We ignore the two left most pieces as we assume that the permutation will always be even.
-/// Then we treat this as a variable base number system where the coefficient of the nth 
-/// digit from the right is (n!/2). 
-/// 
+/// Then we treat this as a variable base number system where the coefficient of the nth
+/// digit from the right is (n!/2).
+///
 /// Example:
 /// ```
 ///   let coord = permutation_to_coord(&[0,1,2,3,4,5]);
 /// ```
 fn permutation_to_coord(positions: &[u8]) -> u32 {
     let mut coord: u32 = 0;  // Note: 32 bits can only handle up to 12 pieces.
-    for i in (2..positions.len()).rev() { 
+    for i in (2..positions.len()).rev() {
         for j in 0..i {
             if positions[i] < positions[j] {
                 coord += 1;
@@ -147,13 +147,13 @@ fn permutation_to_coord(positions: &[u8]) -> u32 {
 }
 
 /// Converts a 32-bit coordinate into a permutation of up to 12 pieces.
-/// 
+///
 /// Example
 /// ```
 ///   let perm = invert_coord_to_permutation::<6>(0);
 /// ```
 fn invert_coord_to_permutation<const N: usize>(coord: u32) -> [u8; N] {
-    let mut perm: [u8; N] = invert_coord_to_permutation_ignore_parity::<N>(coord);    
+    let mut perm: [u8; N] = invert_coord_to_permutation_ignore_parity::<N>(coord);
     if !is_even_parity(&perm) {
         perm.swap(0, 1);
     }
@@ -192,26 +192,26 @@ fn invert_coord_to_corner_state(coord: u32) -> [u8; NUM_CORNERS] {
         first_flip ^= flip;
         state[i] *= 2;
         state[i] += flip;
-    }    
+    }
     state[0] *= 2;
     state[0] += first_flip;
     state
 }
 
 /// Converts a permutation 4 sets of 3 centre pieces into a single 32-bit coordinate.
-/// We do this by creating 3 sub-coordinates, with each sub-coordinate encoding only one 
+/// We do this by creating 3 sub-coordinates, with each sub-coordinate encoding only one
 /// set of identical centres, and ignoring pieces already encoded in another sub-coord.
 /// Therefore, the three sub-coords encode 3 positions out of 12, 9 and 6 possible positions.
-/// For each possible position that is not occupied by the centre of interest, we capture the 
-/// number of possible combinations of pieces that come before that position. The sub-coordinate 
-/// is then the sum of all of these coordinates. These coordinates have ranges of 0..19, 0..83 
+/// For each possible position that is not occupied by the centre of interest, we capture the
+/// number of possible combinations of pieces that come before that position. The sub-coordinate
+/// is then the sum of all of these coordinates. These coordinates have ranges of 0..19, 0..83
 /// and 0..219 (ranges of size binomial(6,3), binomial(9,3), and binomial(12,3) respectively),
 /// so we combine them to a total coordinate with a range of 0..369599.
-/// 
-/// Note: This is also useful for edges if you treat edges from the same up face as 
-/// interchangeable. When used in conjunction with the edge across face coordinate, the two 
+///
+/// Note: This is also useful for edges if you treat edges from the same up face as
+/// interchangeable. When used in conjunction with the edge across face coordinate, the two
 /// combined can give the full edge permutation.
-/// 
+///
 /// Example:
 /// ```
 ///   let coord = face_position_to_coord(&[0,1,2,3,4,5,6,7,8,9,10,11]);
@@ -221,21 +221,21 @@ fn face_position_to_coord(positions: &[u8]) -> u32 {
 }
 
 /// Converts a 32-bit coordinate into a permutation of 4 sets of 3 pieces.
-/// First we split the coordinate into the 3 sub-coordinates, then we extract the masked 
-/// vector of occupied positions for 3 of the 4 centre sets. 
-/// 
+/// First we split the coordinate into the 3 sub-coordinates, then we extract the masked
+/// vector of occupied positions for 3 of the 4 centre sets.
+///
 /// Example
 /// ```
 ///   let perm = invert_coord_to_face_positions(0);
 /// ```
-fn invert_coord_to_face_positions(coord: u32) -> [u8; NUM_CENTRES] {    
+fn invert_coord_to_face_positions(coord: u32) -> [u8; NUM_CENTRES] {
     invert_coord_to_sub_permutation::<3>(coord)
 }
 
 pub fn get_down_centre_coord_for_matched_triples(corner_coord: u32) -> u32 {
     let triple_centres = CoordinateType::TripleCentre.coord_to_state(0);
     let corner_state = CoordinateType::CornerState.coord_to_state(corner_coord);
-    
+
     let mut down_centres = triple_centres.clone();
 
     for i in 0..corner_state.len() {
@@ -251,10 +251,10 @@ pub fn get_down_centre_coord_for_matched_triples(corner_coord: u32) -> u32 {
 }
 
 /// Converts a permutation of edges into a coordinate that encodes the positions of edges within a face.
-/// We define 3 groups of edges, with each group consisting of a single edge from each up face. This is 
+/// We define 3 groups of edges, with each group consisting of a single edge from each up face. This is
 /// done by grouping edges according to the defined order modulo 3. This is then encoded in exactly the same
-/// way as the face position coordinate, although there are 3 groups of 4 instead of 4 groups of 3. There are 
-/// therefore 2 sub coordinates, since the final group is determined by the other two. The sub coordinates have 
+/// way as the face position coordinate, although there are 3 groups of 4 instead of 4 groups of 3. There are
+/// therefore 2 sub coordinates, since the final group is determined by the other two. The sub coordinates have
 /// ranges 0..494 and 0..69, giving a combined coordinate range of 0..34649.
 fn perm_across_face_coord(edges: &[u8]) -> u32 {
     let mut positions: [u8; NUM_EDGES] = [0,4,8,1,5,9,2,6,10,3,7,11];
@@ -281,11 +281,11 @@ fn invert_coord_to_sub_permutation<const N: usize>(coord: u32) -> [u8; NUM_CENTR
 
     for i in 0..num_levels {
         let mut pieces = invert_single_face_centre_coord(
-            sub_coords[num_levels-1-i], 
+            sub_coords[num_levels-1-i],
             N as u8,
             (NUM_CENTRES - (N*i)) as u8,
-            (NUM_CENTRES - (N * (i+1))) as u8);       
-        
+            (NUM_CENTRES - (N * (i+1))) as u8);
+
         for j in 0..NUM_CENTRES {
             if state[j] == 0 {
                 let piece = pieces.pop().unwrap();
@@ -302,7 +302,7 @@ fn invert_coord_to_sub_permutation<const N: usize>(coord: u32) -> [u8; NUM_CENTR
 fn sub_permutation_coord(positions: &[u8], num_groups: u32, num_per_group: u32) -> u32 {
     let mut coord: u32 = 0;
     let num_per_group_u8 = num_per_group as u8;
-    
+
     for i in (0..num_groups).rev() {
         let face = num_per_group_u8 * (i as u8 +1);
         let mut n: usize = 0;
@@ -324,7 +324,7 @@ fn sub_permutation_coord(positions: &[u8], num_groups: u32, num_per_group: u32) 
         for j in 1..num_per_group {
             multiplier *= face as u32 - j;
             divider *= j + 1;
-        }        
+        }
         coord *= multiplier / divider;
     }
     coord
@@ -350,7 +350,7 @@ fn is_even_parity(perm: &[u8]) -> bool {
     result
 }
 
-fn get_sub_coords<const N: usize>(mut coord: u32) -> Vec<u32> {    
+fn get_sub_coords<const N: usize>(mut coord: u32) -> Vec<u32> {
     let num_levels: usize = (NUM_CENTRES / N) - 1;
     let factors: Vec<u32> = match N {
         4 => vec![70, 495],
@@ -479,7 +479,7 @@ mod tests {
         let coord = CoordinateType::EdgeAcrossFaces;
         assert_eq!(coord.coord_to_state(value), state);
     }
-    
+
     #[test_case(&[0,0,0,3,3,3,6,6,6,9,9,9], 0)]
     #[test_case(&[0,0,3,0,3,3,6,6,6,9,9,9], 1)]
     #[test_case(&[9,9,9,6,6,6,3,3,3,0,0,0], 369_599)]
@@ -503,7 +503,7 @@ mod tests {
         let coord = CoordinateType::TripleCentre;
         assert_eq!(coord.coord_to_state(value), state);
     }
-    
+
     #[test_case(&[0,1,2,3,4,5], 0)]
     #[test_case(&[2,0,1,3,4,5], 1)]
     #[test_case(&[4,5,3,2,1,0], 359)]
@@ -514,7 +514,7 @@ mod tests {
     fn test_permutation_to_coord(positions: &[u8], expected: u32) {
         assert_eq!(permutation_to_coord(positions), expected);
     }
-    
+
     #[test_case(0, &[0,1,2,3,4,5])]
     #[test_case(1, &[2,0,1,3,4,5])]
     #[test_case(359, &[4,5,3,2,1,0])]
@@ -533,7 +533,7 @@ mod tests {
     #[test_case(&[0,2,1], false)]
     #[test_case(&[0,1,2,3,4,5], true)]
     #[test_case(&[5,4,3,2,1,0], false)]
-    #[test_case(&[11,10,9,8,7,6,5,4,3,2,1,0], true)]    
+    #[test_case(&[11,10,9,8,7,6,5,4,3,2,1,0], true)]
     fn test_is_even_parity(arr: &[u8], expected: bool) {
         assert_eq!(is_even_parity(arr), expected);
     }
@@ -573,7 +573,7 @@ mod tests {
     fn test_perm_across_face_coord(state: &[u8], expected: u32) {
         assert_eq!(perm_across_face_coord(state), expected);
     }
-    
+
     #[test_case(0, &[0,1,2,0,1,2,0,1,2,0,1,2])]
     #[test_case(1, &[0,0,2,0,1,2,0,1,2,1,1,2])]
     #[test_case(2, &[0,0,2,0,1,2,1,1,2,0,1,2])]
@@ -613,9 +613,9 @@ mod tests {
         for coord_type in CoordinateType::iter() {
             let byte = coord_type.to_byte();
             let converted_coord_type = CoordinateType::from_byte(byte);
-            
+
             assert_eq!(coord_type, converted_coord_type);
-            
+
             for seen in &seen_bytes {
                 assert_ne!(*seen, byte);
             }

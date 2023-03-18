@@ -2,8 +2,8 @@
 /*
 Corners:            UBL    UBR    UF    DB    DR    DL
 Edges:                UB    UR    UL    BLB    BLL    BLD    BRR    BRB    BRD    FL    FR    FD
-Up Centres:     UBL    UBR    UF    BLU    BLF    BLBR    BRU    BRBL    BRF    FU    FBR    FBL 
-Down Centres: BR    BL    BD    RL    RB    RD    LB    LR    LD    DL    DR    DB     
+Up Centres:     UBL    UBR    UF    BLU    BLF    BLBR    BRU    BRBL    BRF    FU    FBR    FBL
+Down Centres: BR    BL    BD    RL    RB    RD    LB    LR    LD    DL    DR    DB
 */
 
 use std::fs;
@@ -40,7 +40,7 @@ const CORNER_NAMES_UP_GOOD: &[&str] = &[
     "corn-DR-BR",
     "corn-DL-F",
 ];
-const CORNER_NAMES_UP_FLIPPED: &[&str] = &[    
+const CORNER_NAMES_UP_FLIPPED: &[&str] = &[
     "corn-UBL-BL",
     "corn-UBR-BR",
     "corn-UF-F",
@@ -48,7 +48,7 @@ const CORNER_NAMES_UP_FLIPPED: &[&str] = &[
     "corn-DR-F",
     "corn-DL-BL",
 ];
-const CORNER_NAMES_DOWN_GOOD: &[&str] = &[    
+const CORNER_NAMES_DOWN_GOOD: &[&str] = &[
     "corn-UBL-L",
     "corn-UBR-B",
     "corn-UF-R",
@@ -56,11 +56,11 @@ const CORNER_NAMES_DOWN_GOOD: &[&str] = &[
     "corn-DR-D",
     "corn-DL-D",
 ];
-const CORNER_NAMES_DOWN_FLIPPED: &[&str] = &[    
+const CORNER_NAMES_DOWN_FLIPPED: &[&str] = &[
     "corn-UBL-B",
     "corn-UBR-R",
     "corn-UF-L",
-    "corn-DB-B", 
+    "corn-DB-B",
     "corn-DR-R",
     "corn-DL-L",
 ];
@@ -78,7 +78,7 @@ const EDGE_UP_NAMES: &[&str] = &[
     "edge-FR-F",
     "edge-FD-F",
 ];
-const EDGE_DOWN_NAMES: &[&str] = &[    
+const EDGE_DOWN_NAMES: &[&str] = &[
     "edge-UB-B",
     "edge-UR-R",
     "edge-UL-L",
@@ -92,7 +92,7 @@ const EDGE_DOWN_NAMES: &[&str] = &[
     "edge-FR-R",
     "edge-FD-D",
 ];
-const UP_CENTRE_NAMES: &[&str] = &[    
+const UP_CENTRE_NAMES: &[&str] = &[
     "cent-UBL",
     "cent-UBR",
     "cent-UF",
@@ -106,7 +106,7 @@ const UP_CENTRE_NAMES: &[&str] = &[
     "cent-FBR",
     "cent-FBL",
 ];
-const DOWN_CENTRE_NAMES: &[&str] = &[    
+const DOWN_CENTRE_NAMES: &[&str] = &[
     "cent-BR",
     "cent-BL",
     "cent-BD",
@@ -151,7 +151,7 @@ impl StickerState {
 
     pub fn create_from_raw_state(state: &RawState) -> Self {
         let mut stickers = StickerState::get_initial();
-        
+
         apply_raw_permutation(&mut stickers.corner_up_good, &state.corners);
         apply_raw_permutation(&mut stickers.corner_up_flipped, &state.corners);
         apply_raw_permutation(&mut stickers.corner_down_good, &state.corners);
@@ -161,7 +161,7 @@ impl StickerState {
 
         apply_raw_permutation(&mut stickers.edge_up, &state.edges);
         apply_raw_permutation(&mut stickers.edge_down, &state.edges);
-        
+
         apply_raw_permutation(&mut stickers.up_centres, &state.up_centres);
         apply_raw_permutation(&mut stickers.down_centres, &state.down_centres);
 
@@ -194,7 +194,7 @@ fn get_svg_template() -> String {
 fn get_style_section(state: &RawState) -> String {
     let header: String = String::from("<style>");
     let footer: String = String::from("</style>");
-    
+
     let stickers = StickerState::create_from_raw_state(&state);
     let styles = get_sticker_styles(&stickers);
 
@@ -204,14 +204,14 @@ fn get_style_section(state: &RawState) -> String {
 fn get_sticker_styles<'a>(stickers: &'a StickerState) -> String {
     let mut styles: String = String::from("");
     let sticker_arrays: Vec<&[u8]> = vec![
-        &stickers.corner_up_good, &stickers.corner_up_flipped, &stickers.corner_down_good, &stickers.corner_down_flipped, 
-        &stickers.edge_up, &stickers.edge_down, 
-        &stickers.up_centres, &stickers.down_centres]; 
+        &stickers.corner_up_good, &stickers.corner_up_flipped, &stickers.corner_down_good, &stickers.corner_down_flipped,
+        &stickers.edge_up, &stickers.edge_down,
+        &stickers.up_centres, &stickers.down_centres];
     let names = vec![
         CORNER_NAMES_UP_GOOD, CORNER_NAMES_UP_FLIPPED, CORNER_NAMES_DOWN_GOOD, CORNER_NAMES_DOWN_FLIPPED,
-        EDGE_UP_NAMES, EDGE_DOWN_NAMES, 
+        EDGE_UP_NAMES, EDGE_DOWN_NAMES,
         UP_CENTRE_NAMES, DOWN_CENTRE_NAMES];
-    
+
     for i in 0..8 {
         let new_style = get_style_for_sticker_set(sticker_arrays[i], names[i]);
         styles += &new_style;
@@ -281,7 +281,7 @@ mod tests {
 
     #[test]
     fn test_get_template_does_not_error() {
-        let _ = get_svg_template();        
+        let _ = get_svg_template();
     }
 
     #[test]
