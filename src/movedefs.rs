@@ -125,6 +125,7 @@ pub enum TurnEffectType {
     EdgeInFace,
     EdgeAcrossFaces,
     UpCentre,
+    DownCentre,
     TripleCentre,
 }
 
@@ -238,6 +239,7 @@ impl RawTurn {
             TurnEffectType::EdgeInFace => Cow::Borrowed(&self.edges), 
             TurnEffectType::EdgeAcrossFaces => Cow::Borrowed(&self.edges), 
             TurnEffectType::UpCentre => Cow::Borrowed(&self.up_centres), 
+            TurnEffectType::DownCentre => Cow::Borrowed(&self.down_centres),
             TurnEffectType::TripleCentre => Cow::Borrowed(&self.triple_centres),
         }
     }

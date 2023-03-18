@@ -6,11 +6,15 @@ use crate::movedefs::{TurnEffectType, NUM_CORNERS, NUM_EDGES, NUM_CENTRES};
 
 
 pub const NUM_CORNER_PERMS: usize = 360;
-// pub const NUM_CORNER_ORIENTATIONS: usize = 32;
+pub const NUM_CORNER_ORIENTATIONS: usize = 32;
 pub const NUM_CORNER_STATES: usize = 11_520;
-// pub const NUM_EDGE_PERMS: usize = 239_500_800;
+pub const NUM_EDGE_PERMS: usize = 239_500_800;
 pub const NUM_FACE_PIECE_PERMS: usize = 369_600;
 pub const NUM_ACROSS_FACE_PERMS: usize = 34_650;
+
+// Triple centres depend on the definitions for down centres and corner state.
+const CORNER_MAIN_TRIPLE_CENTRE: [usize; NUM_CORNERS] = [6, 0, 3, 11, 10, 9];
+const CORNER_FLIPPED_TRIPLE_CENTRE: [usize; NUM_CORNERS] = [1, 4, 7, 2, 5, 8];
 
 lazy_static! {
     static ref BINOMIAL_TABLE: [[u64; 13]; 13] = precompute_binomial_table();
@@ -46,7 +50,6 @@ impl Coordinate {
             Self::EdgeAcrossFaces,
             Self::UpCentre,
             Self::DownCentre,
-            // Self::TripleCentre,
         ].iter().copied()
     }
 
@@ -89,7 +92,7 @@ impl Coordinate {
             Self::EdgeInFace => TurnEffectType::EdgeInFace,
             Self::EdgeAcrossFaces => TurnEffectType::EdgeAcrossFaces,
             Self::UpCentre => TurnEffectType::UpCentre,
-            Self::DownCentre => TurnEffectType::TripleCentre,
+            Self::DownCentre => TurnEffectType::DownCentre,
             Self::TripleCentre => TurnEffectType::TripleCentre,
         }
     }
@@ -227,6 +230,24 @@ fn face_position_to_coord(positions: &[u8]) -> u32 {
 /// ```
 fn invert_coord_to_face_positions(coord: u32) -> [u8; NUM_CENTRES] {    
     invert_coord_to_sub_permutation::<3>(coord)
+}
+
+pub fn get_down_centre_coord_for_matched_triples(corner_coord: u32) -> u32 {
+    let triple_centres = Coordinate::TripleCentre.coord_to_state(0);
+    let corner_state = Coordinate::CornerState.coord_to_state(corner_coord);
+    
+    let mut down_centres = triple_centres.clone();
+
+    for i in 0..corner_state.len() {
+        let index = (corner_state[i] / 2) as usize;
+        let flipped = (corner_state[i] % 2) == 1;
+        down_centres[CORNER_MAIN_TRIPLE_CENTRE[i]] = triple_centres[CORNER_MAIN_TRIPLE_CENTRE[index]];
+        down_centres[CORNER_FLIPPED_TRIPLE_CENTRE[i]] = triple_centres[CORNER_FLIPPED_TRIPLE_CENTRE[index]];
+        if flipped {
+            down_centres.swap(CORNER_MAIN_TRIPLE_CENTRE[i], CORNER_FLIPPED_TRIPLE_CENTRE[i]);
+        }
+    }
+    face_position_to_coord(&down_centres)
 }
 
 /// Converts a permutation of edges into a coordinate that encodes the positions of edges within a face.
@@ -409,6 +430,14 @@ mod tests {
     #[test_case(&[0,1,2,3,4,5,6,7,8,9,10,11], 0)]
     #[test_case(&[1,0,3,2,4,5,6,7,8,9,10,11], 1)]
     #[test_case(&[11,10,9,8,7,6,5,4,3,2,1,0], 369_599)]
+    fn test_down_centers_to_coord(state: &[u8], value: u32) {
+        let coord = Coordinate::DownCentre;
+        assert_eq!(coord.state_to_coord(state), value);
+    }
+
+    #[test_case(&[0,1,2,3,4,5,6,7,8,9,10,11], 0)]
+    #[test_case(&[1,0,3,2,4,5,6,7,8,9,10,11], 1)]
+    #[test_case(&[11,10,9,8,7,6,5,4,3,2,1,0], 369_599)]
     fn test_triple_centers_to_coord(state: &[u8], value: u32) {
         let coord = Coordinate::TripleCentre;
         assert_eq!(coord.state_to_coord(state), value);
@@ -449,6 +478,14 @@ mod tests {
     #[test_case(&[9,9,9,6,6,6,3,3,3,0,0,0], 369_599)]
     fn test_invert_up_centers_coord(state: &[u8], value: u32) {
         let coord = Coordinate::UpCentre;
+        assert_eq!(coord.coord_to_state(value), state);
+    }
+
+    #[test_case(&[0,0,0,3,3,3,6,6,6,9,9,9], 0)]
+    #[test_case(&[0,0,3,0,3,3,6,6,6,9,9,9], 1)]
+    #[test_case(&[9,9,9,6,6,6,3,3,3,0,0,0], 369_599)]
+    fn test_invert_down_centers_coord(state: &[u8], value: u32) {
+        let coord = Coordinate::DownCentre;
         assert_eq!(coord.coord_to_state(value), state);
     }
 
@@ -544,6 +581,14 @@ mod tests {
     #[test_case(219, 3, 12, 9, &[255,255,255,255,255,255,255,255,255,9,9,9])]
     fn test_invert_single_face_centre_coord(coord: u32, num: u8, size: u8, fill: u8, expected: &[u8]) {
         assert_eq!(invert_single_face_centre_coord(coord, num, size, fill), expected);
+    }
+
+    #[test_case(0, 0)]
+    #[test_case(1, 540)]
+    #[test_case(360, 1790)]
+
+    fn test_get_down_centre_coord_for_matched_triples(corner_coord: u32, expected: u32) {
+        assert_eq!(get_down_centre_coord_for_matched_triples(corner_coord), expected);
     }
 
     #[test]

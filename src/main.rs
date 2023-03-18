@@ -26,7 +26,14 @@ fn main() {
 
     let sequence = [
         &Turn::new(Face::R, false),
-        &Turn::new(Face::L, false),
+        &Turn::new(Face::L, true),
+        &Turn::new(Face::U, false),
+        &Turn::new(Face::BR, true),
+        &Turn::new(Face::B, false),
+        &Turn::new(Face::U, false),
+        &Turn::new(Face::D, true),
+        &Turn::new(Face::R, false),
+        &Turn::new(Face::BL, true),
     ];
 
     raw.apply_sequence(&sequence);
