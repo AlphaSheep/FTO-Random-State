@@ -1,8 +1,13 @@
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::{BufWriter, Write, Result, BufReader, Read};
 
 use crate::coordinates::Coordinate;
 use crate::movedefs::{RawTurn, Face, TurnEffectType, Turn};
 use crate::state::{apply_raw_permutation, apply_full_corner};
+
+
+const MOVE_TABLE_FILE: &str = "./movetables.dat";
 
 
 pub struct MoveTables {
@@ -26,6 +31,45 @@ impl MoveTables {
     pub fn apply_move_to_coord(&self, coord: u32, coord_type: Coordinate, turn: &Turn) -> u32 {
         let table = self.tables.get(&coord_type).unwrap();
         table.apply_move_to_coord(coord, turn)
+    }
+
+    pub fn save(&self) {
+        let file = File::create(MOVE_TABLE_FILE).expect("Should have created the file");
+        let mut writer = BufWriter::new(file);
+
+        for (coord, table) in self.tables.iter() {
+            writer.write_all(&[0,0,0,coord.to_byte()])
+                .expect("Coordinate type should be written");
+
+            table.save(&mut writer);
+
+            writer.write_all(&[0,0,0,0])
+                .expect("End of table should be written");
+        }
+        
+        writer.write_all(&[0,0,0,0])
+        .expect("End of move_table file should be written");
+    }
+    
+    pub fn load() -> Self {
+        let file = File::open(MOVE_TABLE_FILE).expect("Should have created the file");
+        let mut reader = BufReader::new(file);
+
+        let mut result = Self { tables: HashMap::new() };
+
+        loop {
+            let coord_byte = read_next_num(&mut reader) as u8;
+            
+            if coord_byte == 0 {
+                break
+            }
+            let coord = Coordinate::from_byte(coord_byte);
+
+            let table = MoveTable::read_from_buffer(&mut reader, coord);
+            result.tables.insert(coord, table);
+        }
+
+        result
     }
 }
 
@@ -106,6 +150,45 @@ impl MoveTable {
         };
         move_table[coord as usize]
     }
+
+    pub fn save(&self, writer: &mut BufWriter<File>) {
+        for (face, values) in self.table.iter() {
+            writer.write_all(&[0,0,0,face.to_byte()])
+                .expect("Face should be written");
+
+            for value in values.iter() {
+                writer.write_all(&value.to_be_bytes())
+                    .expect("Value should be written");
+            }
+        }
+    }
+
+    pub fn read_from_buffer(reader: &mut BufReader<File>, coord_type: Coordinate) -> Self {
+        let mut result = Self::empty(coord_type);
+        result.init();
+
+        let num_values = coord_type.get_size();
+
+        loop {
+            let face_byte = read_next_num(reader) as u8;
+            if face_byte == 0 {
+                break
+            }
+            let face = Face::from_byte(face_byte);            
+
+            let mut table = result.table.get_mut(&face).unwrap();
+            let mut inv_table = result.inverse_table.get_mut(&face).unwrap();
+
+            for coord in 0..num_values {
+                let value = read_next_num(reader);
+                table[coord] = value;
+                inv_table[value as usize] = coord as u32;
+            }
+        }
+        result.populated = true;
+        result
+    }
+
 }
 
 fn add_cycle_to_table(table: &mut [u32], inv_table: &mut [u32], cycle: &[u32]) {
@@ -131,6 +214,12 @@ fn apply_turn_to_state(state: &mut [u8], turn: &RawTurn, effect_type: TurnEffect
     }
 }
 
+fn read_next_num(buf: &mut BufReader<File>) -> u32 {
+    let mut data = [0; 4];
+    buf.read_exact(&mut data)
+        .expect("Should have read the data from the buffer");
+    u32::from_be_bytes(data)
+}
 
 #[cfg(test)]
 mod tests {

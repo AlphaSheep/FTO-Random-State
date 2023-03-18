@@ -160,6 +160,33 @@ impl Face {
     pub fn turn(self) -> &'static RawTurn {
         RawTurn::get(self)
     }
+
+    pub fn to_byte(& self) -> u8 {
+        match self {
+            Self::U => b'U',
+            Self::F => b'F',
+            Self::BL => b'P',
+            Self::BR => b'S',
+            Self::L => b'L',
+            Self::R => b'R',
+            Self::B => b'B',
+            Self::D => b'D',
+        }
+    }
+
+    pub fn from_byte(byte: u8) -> Self {
+        match byte {
+            b'U' => Self::U,
+            b'F' => Self::F,
+            b'P' => Self::BL,
+            b'S' => Self::BR,
+            b'L' => Self::L,
+            b'R' => Self::R,
+            b'B' => Self::B,
+            b'D' => Self::D,
+            _ => panic!("Unrecognised byte")
+        }
+    }
 }
 
 impl RawTurn {

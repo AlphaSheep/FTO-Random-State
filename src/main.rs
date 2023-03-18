@@ -15,8 +15,12 @@ use crate::movetables::MoveTables;
 fn main() {
 
     let now = Instant::now();
-    println!("Generating move tables");
+    println!("Loading move tables");
+
+    // let move_tables = MoveTables::load();
     let move_tables = MoveTables::generate();
+    move_tables.save();
+
     println!("Total time taken: {} seconds", (now.elapsed().as_micros() as f64 / 1_000_000.0));
 
     let mut raw = RawState::solved();
