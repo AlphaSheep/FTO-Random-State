@@ -15,7 +15,18 @@ pub struct MoveTables {
 }
 
 impl MoveTables {
-    pub fn generate() -> Self {
+    pub fn try_load_or_generate() -> Self {
+        match File::open(MOVE_TABLE_FILE) {
+            Ok(file) => Self::load(file),
+            _ => {
+                let move_tables = Self::generate();
+                move_tables.save();
+                move_tables
+            }
+        }
+    }
+
+    fn generate() -> Self {
         let mut tables: HashMap<Coordinate, MoveTable> = HashMap::new();
 
         for coord in Coordinate::iter() {
@@ -33,7 +44,7 @@ impl MoveTables {
         table.apply_move_to_coord(coord, turn)
     }
 
-    pub fn save(&self) {
+    fn save(&self) {
         let file = File::create(MOVE_TABLE_FILE).expect("Should have created the file");
         let mut writer = BufWriter::new(file);
 
@@ -51,8 +62,7 @@ impl MoveTables {
         .expect("End of move_table file should be written");
     }
     
-    pub fn load() -> Self {
-        let file = File::open(MOVE_TABLE_FILE).expect("Should have created the file");
+    fn load(file: File) -> Self {        
         let mut reader = BufReader::new(file);
 
         let mut result = Self { tables: HashMap::new() };

@@ -17,9 +17,7 @@ fn main() {
     let now = Instant::now();
     println!("Loading move tables");
 
-    // let move_tables = MoveTables::load();
-    let move_tables = MoveTables::generate();
-    move_tables.save();
+    let move_tables = MoveTables::try_load_or_generate();
 
     println!("Total time taken: {} seconds", (now.elapsed().as_micros() as f64 / 1_000_000.0));
 
