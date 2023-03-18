@@ -592,6 +592,22 @@ mod tests {
     }
 
     #[test]
+    fn test_coordinate_to_and_from_byte() {
+        let mut seen_bytes = Vec::new();
+        for coord_type in Coordinate::iter() {
+            let byte = coord_type.to_byte();
+            let converted_coord_type = Coordinate::from_byte(byte);
+            
+            assert_eq!(coord_type, converted_coord_type);
+            
+            for seen in &seen_bytes {
+                assert_ne!(*seen, byte);
+            }
+            seen_bytes.push(byte);
+        }
+    }
+
+    #[test]
     fn test_precompute_binomial_table() {
         let binomial_table = precompute_binomial_table();
         assert_eq!(binomial_table[0][0], 1);
