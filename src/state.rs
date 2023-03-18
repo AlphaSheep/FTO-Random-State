@@ -92,7 +92,7 @@ use lazy_static::lazy_static;
 
 use crate::coordinates::{Coordinate, NUM_CORNER_STATES, get_down_centre_coord_for_matched_triples};
 use crate::movedefs::{RawTurn, NUM_CORNERS, Turn};
-use crate::movetables::MoveTables;
+use crate::movetables::{MoveTables, ApplyMove};
 
 lazy_static! {
     static ref SOLVED_CENTRES: [u32; NUM_CORNER_STATES] = precompute_solved_triple_centre_coords();
@@ -107,6 +107,15 @@ pub struct RawState {
     pub edges: Vec<u8>,
     pub up_centres: Vec<u8>,
     pub down_centres: Vec<u8>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct CoordState {
+    pub corners: u32,
+    pub edges_within_faces: u32,
+    pub edges_across_faces: u32,
+    pub up_centres: u32,
+    pub down_centres: u32,
 }
 
 impl RawState {
@@ -190,15 +199,6 @@ impl RawState {
     fn get_down_centres(&self) -> u32 {
         Coordinate::DownCentre.state_to_coord(&self.down_centres)
     }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct CoordState {
-    pub corners: u32,
-    pub edges_within_faces: u32,
-    pub edges_across_faces: u32,
-    pub up_centres: u32,
-    pub down_centres: u32,
 }
 
 impl CoordState {
@@ -328,8 +328,11 @@ fn flip_bool_array_to_num(state: &[bool]) -> u8 {
 
 fn precompute_solved_triple_centre_coords() -> [u32; NUM_CORNER_STATES] {
     let mut coord_map = [0; NUM_CORNER_STATES];
-    for i in 0..NUM_CORNER_STATES {
-        coord_map[i] = get_down_centre_coord_for_matched_triples(i as u32);
+    // for coord in 0..NUM_CORNER_STATES {
+    //     coord_map[coord] = get_down_centre_coord_for_matched_triples(coord as u32);
+    // }
+    for (coord, item) in coord_map.iter_mut().enumerate().take(NUM_CORNER_STATES) {
+        *item = get_down_centre_coord_for_matched_triples(coord as u32);
     }
     coord_map
 }

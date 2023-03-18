@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{BufWriter, Write, Result, BufReader, Read};
+use std::io::{BufWriter, Write, BufReader, Read};
 
 use crate::coordinates::Coordinate;
 use crate::movedefs::{RawTurn, Face, TurnEffectType, Turn};
@@ -10,8 +10,26 @@ use crate::state::{apply_raw_permutation, apply_full_corner};
 const MOVE_TABLE_FILE: &str = "./movetables.dat";
 
 
+pub trait ApplyMove {
+    fn apply_move_to_coord(&self, coord: u32, coord_type: Coordinate, turn: &Turn) -> u32; 
+}
+
+pub trait SubTables {
+    fn get_sub_table<'a, T: ApplyMove>(&'a self, coord_type: &Coordinate) -> &'a T;
+}
+
 pub struct MoveTables {
     pub tables: HashMap<Coordinate, MoveTable>,
+}
+
+pub struct MoveTable {
+    initialised: bool,
+    populated: bool,
+
+    pub coord_type: Coordinate,
+
+    pub table: HashMap<Face, Vec<u32>>,
+    pub inverse_table: HashMap<Face, Vec<u32>>,
 }
 
 impl MoveTables {
@@ -37,11 +55,6 @@ impl MoveTables {
         Self {
             tables
         }
-    }
-
-    pub fn apply_move_to_coord(&self, coord: u32, coord_type: Coordinate, turn: &Turn) -> u32 {
-        let table = self.tables.get(&coord_type).unwrap();
-        table.apply_move_to_coord(coord, turn)
     }
 
     fn save(&self) {
@@ -83,14 +96,11 @@ impl MoveTables {
     }
 }
 
-pub struct MoveTable {
-    initialised: bool,
-    populated: bool,
-
-    coord_type: Coordinate,
-
-    pub table: HashMap<Face, Vec<u32>>,
-    pub inverse_table: HashMap<Face, Vec<u32>>,
+impl ApplyMove for MoveTables {
+    fn apply_move_to_coord(&self, coord: u32, coord_type: Coordinate, turn: &Turn) -> u32 {
+        let table = self.tables.get(&coord_type).unwrap();
+        table.apply_move_to_coord(coord, coord_type, turn)
+    }
 }
 
 impl MoveTable {
@@ -152,15 +162,6 @@ impl MoveTable {
         self.populated = true;
     }
 
-    pub fn apply_move_to_coord(&self, coord: u32, turn: &Turn) -> u32 {
-        let move_table = if turn.invert {
-            self.inverse_table.get(&turn.face).unwrap()
-        } else {
-            self.table.get(&turn.face).unwrap()
-        };
-        move_table[coord as usize]
-    }
-
     pub fn save(&self, writer: &mut BufWriter<File>) {
         for (face, values) in self.table.iter() {
             writer.write_all(&[0,0,0,face.to_byte()])
@@ -186,8 +187,8 @@ impl MoveTable {
             }
             let face = Face::from_byte(face_byte);            
 
-            let mut table = result.table.get_mut(&face).unwrap();
-            let mut inv_table = result.inverse_table.get_mut(&face).unwrap();
+            let table = result.table.get_mut(&face).unwrap();
+            let inv_table = result.inverse_table.get_mut(&face).unwrap();
 
             for coord in 0..num_values {
                 let value = read_next_num(reader);
@@ -198,7 +199,17 @@ impl MoveTable {
         result.populated = true;
         result
     }
+}
 
+impl ApplyMove for MoveTable {
+    fn apply_move_to_coord(&self, coord: u32, _coord_type: Coordinate, turn: &Turn) -> u32 {
+        let move_table = if turn.invert {
+            self.inverse_table.get(&turn.face).unwrap()
+        } else {
+            self.table.get(&turn.face).unwrap()
+        };
+        move_table[coord as usize]
+    }
 }
 
 fn add_cycle_to_table(table: &mut [u32], inv_table: &mut [u32], cycle: &[u32]) {
@@ -231,6 +242,7 @@ fn read_next_num(buf: &mut BufReader<File>) -> u32 {
     u32::from_be_bytes(data)
 }
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -255,15 +267,15 @@ mod tests {
     fn test_move_tables() {
         // Because generating the table is slow, we do it once then do all the checks we need to
         // We choose corner state because it needs the shortest time to generate
-        let coord = Coordinate::CornerState; 
-        let move_table = MoveTable::new(coord);
+        let coord_type = Coordinate::CornerState; 
+        let move_table = MoveTable::new(coord_type);
 
         let start_coord: u32 = 0;
         let end_coord: u32 = 3327;
-        let coord = move_table.apply_move_to_coord(start_coord, &Turn::new(Face::F, false));
+        let coord = move_table.apply_move_to_coord(start_coord, coord_type, &Turn::new(Face::F, false));
         assert_eq!(coord, end_coord);
 
-        let coord = move_table.apply_move_to_coord(end_coord, &Turn::new(Face::F, true));
+        let coord = move_table.apply_move_to_coord(end_coord, coord_type, &Turn::new(Face::F, true));
         assert_eq!(coord, start_coord);
     }
 }

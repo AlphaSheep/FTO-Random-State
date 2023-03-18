@@ -8,6 +8,7 @@ mod movetables;
 mod pruningtables;
 
 use crate::movedefs::{Face, Turn};
+use crate::pruningtables::PruningTables;
 use crate::state::{CoordState, RawState};
 use crate::movetables::MoveTables;
 
@@ -46,4 +47,13 @@ fn main() {
 
     println!("Coords: {:?}", coords.to_raw());
     println!("Raw     {:?}", raw);
+
+
+    let now = Instant::now();
+    println!("Loading move tables");
+
+    let mut pruning_tables = PruningTables::init(&Face::get_all_faces());
+    pruning_tables.populate(&move_tables);
+
+    println!("Total time taken: {} seconds", (now.elapsed().as_micros() as f64 / 1_000_000.0));
 }
