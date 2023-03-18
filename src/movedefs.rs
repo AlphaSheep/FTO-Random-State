@@ -21,6 +21,7 @@
 //      0   1   2   3   4   5   6   7   8   9   10  11
 //      BR  BL  BD  RL  RB  RD  LB  LR  LD  DL  DR  DB   
 
+use std::fmt;
 use std::borrow::Cow;
 
 pub const NUM_CORNERS: usize = 6;
@@ -140,6 +141,7 @@ pub struct RawTurn {
     pub triple_centres: [u8; 12],
 }
 
+#[derive(Clone, Copy)]
 pub struct Turn {
     pub face: Face,
     pub invert: bool
@@ -162,7 +164,20 @@ impl Face {
         RawTurn::get(self)
     }
 
-    pub fn to_byte(& self) -> u8 {
+    pub fn get_primary_face(&self) -> Self {
+        match self {
+            Self::U => Self::U,
+            Self::F => Self::F,
+            Self::BL => Self::BL,
+            Self::BR => Self::BR,
+            Self::L => Self::BR,
+            Self::R => Self::BL,
+            Self::B => Self::F,
+            Self::D => Self::U,
+        }
+    }
+
+    pub fn to_byte(&self) -> u8 {
         match self {
             Self::U => b'U',
             Self::F => b'F',
@@ -252,12 +267,61 @@ impl Turn {
             invert,
          }
     }
+
+    pub fn get_allowed_turns_for_faces(faces: &[Face]) -> Vec<Self> {
+        let mut turns = Vec::new();
+        for face in faces {
+            turns.push(Self::new(*face, false));
+            turns.push(Self::new(*face, true));
+        }
+        turns
+    }
+
+    pub fn get_all_turns() -> Vec<Self> {
+        Self::get_allowed_turns_for_faces(&Face::get_all_faces())
+    }
+
+    pub fn get_up_turns() -> Vec<Self> {
+        Self::get_allowed_turns_for_faces(&Face::get_up_faces())
+    }
+}
+
+impl fmt::Debug for Turn {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let invert_symbol = if self.invert {
+            "'"
+        } else {
+            ""
+        };
+        write!(f, "{:?}{}", self.face, invert_symbol)
+    }
 }
 
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_get_all_faces() {
+        let turns = Face::get_all_faces();
+        let expected = [Face::U, Face::F, Face::BL, Face::BR, Face::L, Face::R, Face::B, Face::D];
+        assert_eq!(turns, expected);
+    }
+
+    #[test]
+    fn test_get_up_faces() {
+        let turns = Face::get_up_faces();
+        let expected = [Face::U, Face::F, Face::BL, Face::BR];
+        assert_eq!(turns, expected);
+    }
+
+    #[test]
+    fn test_get_down_faces() {
+        let turns = Face::get_down_faces();
+        let expected = [Face::L, Face::R, Face::B, Face::D];
+        assert_eq!(turns, expected);
+    }
 
     #[test]
     fn test_get_single_turn() {
@@ -284,24 +348,73 @@ mod tests {
     }
 
     #[test]
-    fn test_get_all_turns() {
+    fn test_get_opposing_faces() {
+        assert_eq!(Face::U.get_primary_face(), Face::U);
+        assert_eq!(Face::D.get_primary_face(), Face::U);
+        assert_eq!(Face::F.get_primary_face(), Face::F);
+        assert_eq!(Face::B.get_primary_face(), Face::F);
+        assert_eq!(Face::BL.get_primary_face(), Face::BL);
+        assert_eq!(Face::R.get_primary_face(), Face::BL);
+        assert_eq!(Face::BR.get_primary_face(), Face::BR);
+        assert_eq!(Face::L.get_primary_face(), Face::BR);
+    }
+
+    #[test]
+    fn test_get_all_raw_turns() {
         let turns = RawTurn::get_all();
         let expected = vec![&RAW_TURN_U, &RAW_TURN_F, &RAW_TURN_BL, &RAW_TURN_BR, &RAW_TURN_L, &RAW_TURN_R, &RAW_TURN_B, &RAW_TURN_D];
         assert_eq!(turns, expected);
     }
 
     #[test]
-    fn test_get_up_turns() {
+    fn test_get_up_raw_turns() {
         let turns = RawTurn::get_for_up_faces();
         let expected = vec![&RAW_TURN_U, &RAW_TURN_F, &RAW_TURN_BL, &RAW_TURN_BR];
         assert_eq!(turns, expected);
     }
 
     #[test]
-    fn test_get_down_turns() {
+    fn test_get_down_raw_turns() {
         let turns = RawTurn::get_for_down_faces();
         let expected = vec![&RAW_TURN_L, &RAW_TURN_R, &RAW_TURN_B, &RAW_TURN_D];
         assert_eq!(turns, expected);
+    }
+
+    fn assert_turn_list_contains_each_face_both_directions(turns: &[Turn], faces: &[Face]) {
+        assert_eq!(turns.len(), faces.len() * 2);
+        for face in faces {
+            let mut seen_flags: u8 = 0b00;
+            for turn in turns {
+                if turn.face == *face {
+                    let mask = 1 << (turn.invert as u8);
+                    assert_eq!(seen_flags & mask, 0);
+                    seen_flags |= mask;
+                }
+            }
+            assert_eq!(seen_flags, 0b11);
+        }
+    }
+
+    #[test]
+    fn test_debug_turn() {
+        assert_eq!(format!("{:?}", Turn::new(Face::U, true)), "U'");
+        assert_eq!(format!("{:?}", Turn::new(Face::U, false)), "U");
+        assert_eq!(format!("{:?}", Turn::new(Face::B, true)), "B'");
+        assert_eq!(format!("{:?}", Turn::new(Face::B, false)), "B");
+        assert_eq!(format!("{:?}", Turn::new(Face::BR, true)), "BR'");
+        assert_eq!(format!("{:?}", Turn::new(Face::BR, false)), "BR");
+    }
+
+    #[test]
+    fn test_get_all_turns() {
+        let turns = Turn::get_all_turns();
+        assert_turn_list_contains_each_face_both_directions(&turns, &Face::get_all_faces())
+    }
+
+    #[test]
+    fn test_get_up_turns() {
+        let turns = Turn::get_up_turns();
+        assert_turn_list_contains_each_face_both_directions(&turns, &Face::get_up_faces())
     }
 
     #[test]
@@ -311,8 +424,7 @@ mod tests {
             let byte = face.to_byte();
             let converted_face = Face::from_byte(byte);
             
-            assert_eq!(face, converted_face);
-            
+            assert_eq!(face, converted_face);            
             for seen in &seen_bytes {
                 assert_ne!(*seen, byte);
             }

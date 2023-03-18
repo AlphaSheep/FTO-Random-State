@@ -89,15 +89,15 @@
 */
 
 use lazy_static::lazy_static;
+use rand::{thread_rng, Rng};
 
-use crate::coordinates::{Coordinate, NUM_CORNER_STATES, get_down_centre_coord_for_matched_triples};
+use crate::coordinates::{Coordinate, NUM_CORNER_STATES, get_down_centre_coord_for_matched_triples, NUM_FACE_PIECE_PERMS, NUM_ACROSS_FACE_PERMS};
 use crate::movedefs::{RawTurn, NUM_CORNERS, Turn};
 use crate::movetables::{MoveTables, ApplyMove};
 
 lazy_static! {
     static ref SOLVED_CENTRES: [u32; NUM_CORNER_STATES] = precompute_solved_triple_centre_coords();
 }
-
 
 
 #[derive(Clone, Debug, PartialEq)]
@@ -212,6 +212,17 @@ impl CoordState {
         }
     }
 
+    pub fn get_random() -> Self {
+        let mut rng = thread_rng();
+        Self {
+            corners: rng.gen_range(0..NUM_CORNER_STATES) as u32,
+            edges_within_faces: rng.gen_range(0..NUM_FACE_PIECE_PERMS) as u32,
+            edges_across_faces: rng.gen_range(0..NUM_ACROSS_FACE_PERMS) as u32,
+            up_centres: rng.gen_range(0..NUM_FACE_PIECE_PERMS) as u32,
+            down_centres: rng.gen_range(0..NUM_FACE_PIECE_PERMS) as u32,
+        }
+    }
+
     pub fn apply_sequence(&mut self, move_tables: &MoveTables, sequence: &[&Turn]) {
         for turn in sequence {
             self.apply(move_tables, turn);
@@ -274,6 +285,10 @@ impl CoordState {
     fn get_down_centres(&self) -> Vec<u8> {
         Coordinate::DownCentre.coord_to_state(self.down_centres)
     }
+}
+
+pub fn do_triple_centres_match_corners(corners: u32, down_centres: u32) -> bool {
+    SOLVED_CENTRES[corners as usize] == down_centres
 }
 
 pub fn apply_raw_permutation<T>(state: &mut [T], effect: &[u8]) 

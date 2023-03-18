@@ -18,6 +18,11 @@ impl PruningTables {
         }
     }
 
+    pub fn get_distance(&self, coord: u32, coord_type: &Coordinate) -> u8 {
+        let lookup = self.tables.get(coord_type).unwrap();
+        lookup[coord as usize]
+    }
+
     fn get_allowed_turns(&self) -> Vec<Turn> {
         let mut turns = Vec::with_capacity(self.faces.len() * 2);
         for face in &self.faces {
